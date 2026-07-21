@@ -1,0 +1,30 @@
+{
+  "schema": 1,
+  "apps": [
+    { "exe": "Discord.exe", "name": "Discord", "category": "chat" },
+    { "exe": "DiscordPTB.exe", "name": "Discord PTB", "category": "chat" },
+    { "exe": "DiscordCanary.exe", "name": "Discord Canary", "category": "chat" },
+    { "exe": "Zoom.exe", "name": "Zoom", "category": "meeting" },
+    { "exe": "Teams.exe", "name": "Microsoft Teams", "category": "meeting" },
+    { "exe": "ms-teams.exe", "name": "Microsoft Teams", "category": "meeting" },
+    { "exe": "Slack.exe", "name": "Slack", "category": "chat" },
+    { "exe": "Telegram.exe", "name": "Telegram", "category": "chat" },
+    { "exe": "WeChat.exe", "name": "WeChat", "category": "chat" },
+    { "exe": "WeChatAppEx.exe", "name": "WeChat", "category": "chat" },
+    { "exe": "LINE.exe", "name": "LINE", "category": "chat" },
+    { "exe": "KakaoTalk.exe", "name": "KakaoTalk", "category": "chat" },
+    { "exe": "Skype.exe", "name": "Skype", "category": "chat" },
+    { "exe": "Signal.exe", "name": "Signal", "category": "chat" },
+    { "exe": "ts3client_win64.exe", "name": "TeamSpeak", "category": "voip" },
+    { "exe": "TeamSpeak3.exe", "name": "TeamSpeak", "category": "voip" },
+    { "exe": "Viber.exe", "name": "Viber", "category": "chat" },
+    { "exe": "Element.exe", "name": "Element", "category": "chat" },
+    { "exe": "Mumble.exe", "name": "Mumble", "category": "voip" },
+    { "exe": "WhatsApp.exe", "name": "WhatsApp", "category": "chat" },
+    { "exe": "Webex.exe", "name": "Webex", "category": "meeting" },
+    { "exe": "CiscoCollabHost.exe", "name": "Webex", "category": "meeting" },
+    { "exe": "DingTalk.exe", "name": "DingTalk", "category": "chat" },
+    { "exe": "QQ.exe", "name": "QQ", "category": "chat" },
+    { "exe": "Guilded.exe", "name": "Guilded", "category": "chat" }
+  ]
+}
