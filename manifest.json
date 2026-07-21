@@ -7,14 +7,16 @@
       "kind": "one_time",
       "target_usd": 200,
       "current_usd": 0,
-      "fund_url": "https://buy.stripe.com/aFa6oI9SacoNaLydd51Nu05"
+      "fund_url": "https://buy.stripe.com/aFa6oI9SacoNaLydd51Nu05",
+      "fund_monthly_url": "https://buy.stripe.com/28EbJ2d4mgF33j67SL1Nu09"
     },
     {
       "id": "expedited",
       "kind": "one_time",
       "target_usd": 400,
       "current_usd": 0,
-      "fund_url": "https://buy.stripe.com/00w6oIggy9cBdXK1un1Nu06"
+      "fund_url": "https://buy.stripe.com/00w6oIggy9cBdXK1un1Nu06",
+      "fund_monthly_url": "https://buy.stripe.com/14A00k0hAagF9Hu1un1Nu0a"
     },
     {
       "id": "living",
