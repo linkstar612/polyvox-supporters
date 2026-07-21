@@ -1,0 +1,76 @@
+{
+  "schema": 1,
+  "updated_at": "2026-07-21T00:00:00Z",
+  "goals": [
+    {
+      "id": "dev_costs",
+      "kind": "one_time",
+      "target_usd": 200,
+      "current_usd": 0,
+      "fund_url": "https://buy.stripe.com/aFa6oI9SacoNaLydd51Nu05"
+    },
+    {
+      "id": "expedited",
+      "kind": "one_time",
+      "target_usd": 400,
+      "current_usd": 0,
+      "fund_url": "https://buy.stripe.com/00w6oIggy9cBdXK1un1Nu06"
+    },
+    {
+      "id": "living",
+      "kind": "monthly",
+      "target_usd": 500,
+      "current_usd": 0,
+      "fund_url": "https://buy.stripe.com/dRm28saWefAZdXK5KD1Nu07",
+      "fund_monthly_url": "https://buy.stripe.com/eVq7sM8O6gF32f24Gz1Nu08"
+    }
+  ],
+  "links": [
+    {
+      "platform": "stripe",
+      "url": "https://buy.stripe.com/14A7sM9Sa3Shf1O2yr1Nu00",
+      "regions_boost": ["*"],
+      "methods": ["card", "applepay"],
+      "tiers": [
+        { "amount_usd": 3, "url": "https://buy.stripe.com/eVq14oe8q0G57zma0T1Nu01" },
+        { "amount_usd": 5, "url": "https://buy.stripe.com/14A7sM9Sa3Shf1O2yr1Nu00" },
+        { "amount_usd": 10, "url": "https://buy.stripe.com/9B65kEc0i4Wl2f20qj1Nu02" },
+        { "amount_usd": 25, "url": "https://buy.stripe.com/9B66oI8O6agFaLy7SL1Nu03" },
+        { "amount_usd": 50, "url": "https://buy.stripe.com/6oUfZie8qcoN3j6a0T1Nu04" }
+      ]
+    },
+    {
+      "platform": "kofi",
+      "url": "https://ko-fi.com/hgmllc",
+      "regions_boost": ["*"],
+      "methods": ["card", "paypal"]
+    },
+    {
+      "platform": "patreon",
+      "url": "https://www.patreon.com/cw/hgmllc",
+      "regions_boost": ["US", "EU"],
+      "methods": ["card", "paypal"]
+    },
+    {
+      "platform": "pixiv",
+      "url": "https://www.pixiv.net/en/users/126719682",
+      "regions_boost": ["JP"],
+      "methods": []
+    },
+    {
+      "platform": "booth",
+      "url": "https://hgmllc.booth.pm/",
+      "regions_boost": ["JP"],
+      "methods": ["card", "konbini"]
+    }
+  ],
+  "supporters": [
+    {
+      "name": "The Polyvox Team",
+      "tier": "founder",
+      "since": "2026-01",
+      "link": "",
+      "permanent": true
+    }
+  ]
+}

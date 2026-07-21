@@ -1,0 +1,8 @@
+{
+  "_comment": "Manual per-goal USD the Stripe poller can't see (Ko-fi, Patreon, pixiv, BOOTH have no read API). Hand-edit these numbers; aggregate.mjs adds them on top of the Stripe totals for each goal id.",
+  "manual_usd": {
+    "dev_costs": 0,
+    "expedited": 0,
+    "living": 0
+  }
+}
