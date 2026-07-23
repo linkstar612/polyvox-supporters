@@ -1,6 +1,6 @@
 {
   "schema": 1,
-  "updated_at": "2026-07-21T00:00:00Z",
+  "updated_at": "2026-07-23T00:00:00Z",
   "goals": [
     {
       "id": "dev_costs",
@@ -34,11 +34,12 @@
       "regions_boost": ["*"],
       "methods": ["card", "applepay"],
       "tiers": [
-        { "amount_usd": 3, "url": "https://buy.stripe.com/eVq14oe8q0G57zma0T1Nu01" },
-        { "amount_usd": 5, "url": "https://buy.stripe.com/14A7sM9Sa3Shf1O2yr1Nu00" },
-        { "amount_usd": 10, "url": "https://buy.stripe.com/9B65kEc0i4Wl2f20qj1Nu02" },
-        { "amount_usd": 25, "url": "https://buy.stripe.com/9B66oI8O6agFaLy7SL1Nu03" },
-        { "amount_usd": 50, "url": "https://buy.stripe.com/6oUfZie8qcoN3j6a0T1Nu04" }
+        { "amount_usd": 1, "url": "https://buy.stripe.com/14AdRa2pI4Wl3j67SL1Nu0b", "monthly_url": "https://buy.stripe.com/3cIdRaggy74t9Hufld1Nu0c" },
+        { "amount_usd": 3, "url": "https://buy.stripe.com/eVq14oe8q0G57zma0T1Nu01", "monthly_url": "https://buy.stripe.com/6oU14o1lE60p6vigph1Nu0d" },
+        { "amount_usd": 5, "url": "https://buy.stripe.com/14A7sM9Sa3Shf1O2yr1Nu00", "monthly_url": "https://buy.stripe.com/aFa14o7K260pcTGb4X1Nu0e" },
+        { "amount_usd": 10, "url": "https://buy.stripe.com/9B65kEc0i4Wl2f20qj1Nu02", "monthly_url": "https://buy.stripe.com/4gMcN68O6ewV7zm5KD1Nu0f" },
+        { "amount_usd": 25, "url": "https://buy.stripe.com/9B66oI8O6agFaLy7SL1Nu03", "monthly_url": "https://buy.stripe.com/6oUcN66FYgF32f27SL1Nu0g" },
+        { "amount_usd": 50, "url": "https://buy.stripe.com/6oUfZie8qcoN3j6a0T1Nu04", "monthly_url": "https://buy.stripe.com/aFa5kEfcu88x4na0qj1Nu0h" }
       ]
     },
     {
