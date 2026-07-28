@@ -1,0 +1,22 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+
+  // The name is the hostname, and the hostname is pasted into
+  // ko-fi.com/manage/webhooks. Renaming this Worker silently stops every future
+  // Ko-fi donation from reaching the ledger — Ko-fi keeps POSTing to the old
+  // URL and never reports the failure anywhere the owner looks.
+  "name": "polyvox-kofi-doorman",
+  "main": "kofi-doorman.js",
+  "compatibility_date": "2026-07-01",
+
+  // A dispatch that fails returns 502 so Ko-fi retries. Without logs, that
+  // retry loop is invisible and looks identical to a donation that never
+  // arrived.
+  "observability": { "enabled": true }
+
+  // No vars and no secrets are declared here on purpose. KOFI_TOKEN, GH_TOKEN
+  // and GH_REPO are set with `wrangler secret put` (or in the dashboard) and
+  // `wrangler deploy` leaves existing secrets untouched — declaring GH_REPO as
+  // a plain var here would overwrite the secret of the same name with a
+  // plaintext value on the next deploy.
+}

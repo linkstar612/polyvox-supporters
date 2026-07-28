@@ -10,17 +10,23 @@
 // this file and never travels further. `is_public` is the donor's own answer
 // to "may I be named", and it is honoured as given.
 //
-// Deploy:
-//   1. dash.cloudflare.com → Workers & Pages → Create → Worker. Paste this.
-//   2. Settings → Variables → add three SECRETS (not plaintext vars):
+// Deploy, from this directory, with `wrangler.jsonc` alongside:
+//   1. npx wrangler deploy
+//   2. Set three secrets — `wrangler secret put NAME`, once each. `deploy`
+//      leaves existing secrets alone, so this is a one-time step:
 //        KOFI_TOKEN   ko-fi.com/manage/webhooks → Advanced → Verification Token
 //        GH_TOKEN     a fine-grained PAT scoped to ONLY the polyvox-supporters
-//                     repo with "Contents: read and write" — nothing else
+//                     repo with "Contents: read and write" — nothing else.
+//                     That is what POST /repos/…/dispatches requires; Actions
+//                     scope is for `workflow_dispatch`, a different endpoint
 //        GH_REPO      linkstar612/polyvox-supporters
-//   3. Deploy, copy the *.workers.dev URL.
-//   4. ko-fi.com/manage/webhooks → Webhook URL → paste it → Update.
-//   5. Press "Send Test" there. A test donation should appear in ledger.json
+//   3. ko-fi.com/manage/webhooks → Webhook URL → paste the deployed URL → Update.
+//   4. Press "Send Test" there. A test donation should appear in ledger.json
 //      within a minute or two, and the goal bar moves on the next app poll.
+//
+// The dashboard route still works if you prefer it — Workers & Pages → Create →
+// Worker, paste this file, add the three under Settings → Variables as SECRETS
+// (not plaintext vars).
 
 export default {
   async fetch(request, env) {
