@@ -12,7 +12,12 @@
   // A dispatch that fails returns 502 so Ko-fi retries. Without logs, that
   // retry loop is invisible and looks identical to a donation that never
   // arrived.
-  "observability": { "enabled": true }
+  "observability": { "enabled": true },
+
+  // Weekly token health check, Mondays 07:00 UTC. `token-watch.yml` reads what
+  // this writes two hours later, so a cron that silently stops shows up as a
+  // stale file rather than as nothing at all.
+  "triggers": { "crons": ["0 7 * * 1"] }
 
   // No vars and no secrets are declared here on purpose. KOFI_TOKEN, GH_TOKEN
   // and GH_REPO are set with `wrangler secret put` (or in the dashboard) and

@@ -1,0 +1,85 @@
+name: token-watch
+
+# Fails loudly while the doorman's GitHub token still has time left on it.
+#
+# Deliberately NOT a step inside aggregate-supporters. That workflow runs twice
+# an hour and rebuilds the goal bars, so folding this in would mean an expiring
+# token both stops the donation totals updating and sends ~48 failure mails a
+# day. Once a week, on its own, is the whole point.
+#
+# The alert channel is the failure itself: GitHub mails the owner on a failed
+# scheduled run, which keeps the warning private — a public issue would announce
+# when this repo's automation goes dark, and the token only has Contents: write
+# so it could not open one anyway.
+
+on:
+  schedule:
+    - cron: "0 9 * * 1" # Mondays 09:00 UTC, two hours after the Worker writes
+  workflow_dispatch: {}
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check the doorman's token health
+        run: |
+          node - <<'EOF'
+          const { readFileSync } = require("node:fs");
+
+          // Three weeks. The check has to fire while the token still works,
+          // because a dead token cannot report its own death — whatever wrote
+          // this file needed the token to write it.
+          const WARN_DAYS = 21;
+          // The Worker writes weekly, so anything past ten days means its cron
+          // stopped. That silence is itself the failure: without this bound a
+          // Worker that never runs again looks exactly like a healthy token.
+          const STALE_DAYS = 10;
+
+          let status;
+          try {
+            status = JSON.parse(readFileSync("worker-status.json", "utf8"));
+          } catch {
+            console.error(
+              "worker-status.json is missing. Either the doorman has never run its\n" +
+              "cron, or it can no longer commit — both mean the token is unwatched.",
+            );
+            process.exit(1);
+          }
+
+          const ageDays = (Date.now() - Date.parse(status.checked)) / 86_400_000;
+          const { valid, expires, days_left: daysLeft } = status.gh_token;
+          console.log(`last checked ${ageDays.toFixed(1)} d ago · valid=${valid} · expires=${expires ?? "never"}`);
+
+          const problems = [];
+          if (ageDays > STALE_DAYS) {
+            problems.push(
+              `Status is ${ageDays.toFixed(0)} days old. The doorman's weekly cron has stopped,\n` +
+              `so nothing is watching the token — check the Worker in the Cloudflare dashboard.`,
+            );
+          }
+          if (!valid) {
+            problems.push(
+              "GH_TOKEN no longer authenticates. Ko-fi donations are reaching the Worker\n" +
+              "and failing at the GitHub hop, so the goal bar has stopped moving.",
+            );
+          }
+          if (daysLeft !== null && daysLeft < WARN_DAYS) {
+            problems.push(
+              `GH_TOKEN expires in ${daysLeft} days (${expires}). Rotate it BEFORE then:\n` +
+              "  1. github.com/settings/personal-access-tokens — regenerate, or make a new\n" +
+              "     fine-grained token: only polyvox-supporters, Contents: Read and write.\n" +
+              "  2. cd worker && npx wrangler secret put GH_TOKEN",
+            );
+          }
+
+          if (problems.length) {
+            console.error("\n" + problems.join("\n\n"));
+            process.exit(1);
+          }
+          console.log("Token health OK.");
+          EOF

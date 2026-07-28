@@ -104,4 +104,63 @@ export default {
     }
     return new Response("ok", { status: 200 });
   },
+
+  // GH_TOKEN is the one credential here that expires, and it is exercised only
+  // when a real donation arrives — so it can lapse in a quiet month and the
+  // first thing to notice would be a lost tip. This writes its remaining life
+  // into the repo weekly; `.github/workflows/token-watch.yml` reads that file
+  // and shouts. Nothing warns about a token that is already dead, which is why
+  // the alert threshold is three weeks rather than three days.
+  async scheduled(event, env, ctx) {
+    ctx.waitUntil(recordTokenHealth(env));
+  },
 };
+
+const STATUS_PATH = "worker-status.json";
+
+async function recordTokenHealth(env) {
+  const gh = (path, init) =>
+    fetch(`https://api.github.com/${path}`, {
+      ...init,
+      headers: {
+        Authorization: `Bearer ${env.GH_TOKEN}`,
+        Accept: "application/vnd.github+json",
+        "User-Agent": "polyvox-kofi-doorman",
+        ...init?.headers,
+      },
+    });
+
+  // Any authenticated call carries the expiry; asking the repo endpoint also
+  // proves the token still has the access the dispatch path depends on.
+  const probe = await gh(`repos/${env.GH_REPO}`);
+  // GitHub returns "YYYY-MM-DD HH:MM:SS UTC", which Date cannot parse as-is.
+  const raw = probe.headers.get("github-authentication-token-expiration");
+  const expires = raw ? new Date(raw.replace(" UTC", "Z").replace(" ", "T")) : null;
+
+  const status = {
+    checked: new Date().toISOString(),
+    gh_token: {
+      valid: probe.ok,
+      // A token set to never expire reports no header at all — distinct from
+      // one whose expiry could not be read, so it is stated rather than nulled.
+      expires: expires ? expires.toISOString() : null,
+      days_left: expires ? Math.floor((expires - Date.now()) / 86_400_000) : null,
+    },
+  };
+
+  // Contents: write is the only permission this token has, so committing a file
+  // is the whole notification channel — it cannot open an issue, and widening it
+  // to do so would undo the narrowing that keeps this key boring to leak.
+  const existing = await gh(`repos/${env.GH_REPO}/contents/${STATUS_PATH}`);
+  const sha = existing.ok ? (await existing.json()).sha : undefined;
+
+  await gh(`repos/${env.GH_REPO}/contents/${STATUS_PATH}`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      message: "chore: record doorman token health",
+      content: btoa(`${JSON.stringify(status, null, 2)}\n`),
+      ...(sha ? { sha } : {}),
+    }),
+  });
+}
