@@ -43,7 +43,7 @@ const PATRON_USD = 25;
 // The Stripe checkout custom field whose value is the donor's opt-in display
 // name. Add it to each Payment Link as an OPTIONAL text field — leaving it
 // blank is how a donor stays anonymous, so it must never be required.
-const NAME_FIELD = "display_name";
+const NAME_FIELD = "displayname"; // Stripe derives the key from the label, alphanumerics only: no underscore.
 
 const read = async (path, fallback) => {
   try {
