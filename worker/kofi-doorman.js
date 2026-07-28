@@ -42,10 +42,19 @@ export default {
       return new Response("bad payload", { status: 400 });
     }
 
+    // A missing secret is a deployment fault, not a prober, and the two must not
+    // share an answer. Saying "ok" here would tell Ko-fi a real donation was
+    // delivered, and it would never retry — so pasting the webhook URL before
+    // setting KOFI_TOKEN would silently eat every tip in between. Ko-fi retries
+    // a non-2xx and the workflow dedupes by `id`, so failing is the safe half.
+    if (!env.KOFI_TOKEN) {
+      return new Response("doorman not configured", { status: 503 });
+    }
+
     // The only thing standing between this endpoint and anyone who finds the
     // URL. Compared in full, and the response is deliberately identical in
     // shape to a success so a prober learns nothing.
-    if (!env.KOFI_TOKEN || event.verification_token !== env.KOFI_TOKEN) {
+    if (event.verification_token !== env.KOFI_TOKEN) {
       return new Response("ok", { status: 200 });
     }
 
