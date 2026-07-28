@@ -30,7 +30,10 @@ const entry = {
   goal: String(incoming.goal ?? "living").slice(0, 32),
   name: String(incoming.name ?? "").trim().slice(0, 48),
   link: "",
-  recurring: Boolean(incoming.recurring),
+  // NOT `Boolean(...)`: a dispatch sent as form fields (`gh api -f`, curl)
+  // delivers the string "false", and `Boolean("false")` is true — which would
+  // read as a standing subscription and promote a one-off donor to patron.
+  recurring: incoming.recurring === true || incoming.recurring === "true",
 };
 
 if (!entry.id || !entry.platform || !/^\d{4}-\d{2}$/.test(entry.month)) {

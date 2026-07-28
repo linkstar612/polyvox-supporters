@@ -1,6 +1,6 @@
 {
   "schema": 1,
-  "updated_at": "2026-07-28T11:27:19.305Z",
+  "updated_at": "2026-07-28T11:28:14.437Z",
   "goals": [
     {
       "id": "dev_costs",
@@ -22,7 +22,7 @@
       "id": "living",
       "kind": "monthly",
       "target_usd": 500,
-      "current_usd": 1,
+      "current_usd": 0,
       "fund_url": "https://buy.stripe.com/dRm28saWefAZdXK5KD1Nu07",
       "fund_monthly_url": "https://buy.stripe.com/eVq7sM8O6gF32f24Gz1Nu08"
     }
