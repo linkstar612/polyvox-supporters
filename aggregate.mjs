@@ -78,10 +78,21 @@ const ZERO_DECIMAL = new Set([
 
 /** Every paid checkout session, as ledger-shaped records.
  *
- *  `amount_total` is in the PRESENTMENT currency, which is not always yours:
- *  with Adaptive Pricing on, a Thai donor's $5 arrives as a THB session and
- *  reading it as USD would book it as several hundred dollars. Both the minor
- *  unit and the FX conversion therefore come off `s.currency`.
+ *  Amounts are read off `s.currency` / `s.amount_total` and pushed through the
+ *  same `toUsd` the ledger uses, which is correct on both sides of an Adaptive
+ *  Pricing API change and needs no special-casing:
+ *
+ *  - **Current API**: `currency` is YOUR settlement currency and what the
+ *    customer actually saw moved to `presentment_details`. A Thai donor's $5
+ *    arrives as `usd`/500, `toUsd` is the identity, and the figure is exact.
+ *  - **Older API**: `currency` was the customer's (`thb`) and yours sat in
+ *    `currency_conversion`. `toUsd` converts through the manifest's FX
+ *    snapshot — a few percent off, but never the ~36x error that reading a
+ *    THB amount as USD would book.
+ *
+ *  `currency_conversion` is deliberately not consulted: Stripe has deprecated
+ *  it and tells integrations to read `amount_total` directly, so branching on
+ *  it would add a second code path that is scheduled to stop existing.
  *
  *  `skipPi` holds PaymentIntent ids already written into ledger.json by hand —
  *  a payment recorded before this rail was switched on would otherwise be

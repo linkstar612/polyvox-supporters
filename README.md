@@ -46,7 +46,11 @@ That gap is the only reason the Worker exists.
 
 1. **Restricted Stripe key** — Dashboard → Developers → API keys → *Create
    restricted key*. Grant **read** on *Checkout Sessions*; everything else
-   **None**. Copy the `rk_live_…`.
+   **None**, including *Payment Intents*. `aggregate.mjs` only ever lists
+   Checkout Sessions and reads `payment_intent` as the plain string id the list
+   response already carries — it never expands or retrieves the intent, so
+   granting that permission would widen the key for nothing. Copy the
+   `rk_live_…`. Never use your `sk_live_` secret key here.
 2. Add it here as a secret: **Settings → Secrets and variables → Actions → New
    repository secret**, named `STRIPE_RESTRICTED_KEY`. Never commit the key.
 3. **Map your links to goals** — edit `LINK_TO_GOAL` at the top of
