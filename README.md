@@ -62,8 +62,8 @@ That gap is the only reason the Worker exists.
    [`worker/kofi-doorman.js`](./worker/kofi-doorman.js).
 5. **Add the name field to checkout** (this is what makes the wall opt-in for
    Stripe): on each Payment Link, add an **optional** text custom field with the
-   key `display_name`, labelled something like *"Name for the supporters wall
-   (leave blank to stay anonymous)"*. Blank is anonymous; the money still counts.
+   key `displayname`, labelled something like *"Name for the supporters wall
+   (leave blank to stay anonymous)"*. Blank is anonymous; the money still counts. Stripe derives the field key from the label and permits alphanumerics only, so a label of "Display name" yields the key displayname, with no underscore; it must match NAME_FIELD in aggregate.mjs.
 6. Run it once: **Actions → aggregate-supporters → Run workflow**.
 
 Until the Stripe secret exists the Action still runs — it just skips the Stripe
@@ -127,7 +127,7 @@ Removing a name is the same edit in reverse.
 ## Notes
 
 - **Nobody is named without opting in.** Ko-fi's `is_public` flag and Stripe's
-  blank-able `display_name` field are the two consent gates, and
+  blank-able `displayname` field are the two consent gates, and
   `ledger-append.mjs` allowlists the fields that may be written at all. The
   donor's Ko-fi *message* is never forwarded — it was written to the developer,
   not to a public wall.
