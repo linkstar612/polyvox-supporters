@@ -17,10 +17,11 @@ on:
 permissions:
   contents: write
 
-# Never let two runs race the same file: a dispatch and a cron tick landing
-# together would both read ledger.json, both append, and the second push would
-# be rejected. Queue rather than cancel — a cancelled dispatch run is a
-# donation silently dropped.
+# Queue rather than cancel — a cancelled dispatch run is a donation silently
+# dropped. This narrows the race but does NOT close it: a queued run can begin,
+# and check out main, while the run ahead of it is still finishing its push.
+# Measured that happening with three seconds to spare, so the push step below
+# is what actually guarantees no donation is lost.
 concurrency:
   group: aggregate
   cancel-in-progress: false
@@ -34,21 +35,46 @@ jobs:
         with:
           node-version: "20"
 
-      - name: Record the pushed donation
-        if: github.event_name == 'repository_dispatch'
-        env:
-          LEDGER_ENTRY: ${{ toJSON(github.event.client_payload) }}
-        run: node ledger-append.mjs
-
-      - name: Rebuild goals + wall
+      # Append, rebuild, commit and push as one retryable unit.
+      #
+      # A rejected push used to end the run, and with it that run's ledger
+      # append. Observed 2026-07-28: two dispatches seconds apart, the second
+      # checked out main three seconds before the first pushed, and its work was
+      # discarded. Harmless there — both carried the same donation, deduped by
+      # `id` — but two DIFFERENT donations that close together would lose the
+      # second one outright, and nothing would retry it: the doorman already
+      # answered Ko-fi 200, so Ko-fi considers it delivered.
+      #
+      # Recompute rather than rebase. Replaying this run's commit would publish a
+      # manifest built from a ledger that never saw the other donation, which is
+      # a wrong total rather than a failed push. Both scripts are idempotent —
+      # ledger-append dedupes on `id`, aggregate rebuilds wholesale — so redoing
+      # the work on the winner's tip is always safe and always correct.
+      - name: Rebuild and publish
         env:
           STRIPE_RESTRICTED_KEY: ${{ secrets.STRIPE_RESTRICTED_KEY }}
-        run: node aggregate.mjs
-
-      - name: Commit if changed
+          IS_DISPATCH: ${{ github.event_name == 'repository_dispatch' }}
+          LEDGER_ENTRY: ${{ toJSON(github.event.client_payload) }}
         run: |
           git config user.name "supporters-bot"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add manifest.json ledger.json
-          git diff --cached --quiet || git commit -m "chore: refresh supporter goals + wall"
-          git push
+
+          for attempt in 1 2 3 4 5; do
+            if [ "$IS_DISPATCH" = "true" ]; then node ledger-append.mjs; fi
+            node aggregate.mjs
+
+            git add manifest.json ledger.json
+            if git diff --cached --quiet; then
+              echo "Nothing changed — already published by another run."
+              exit 0
+            fi
+            git commit -q -m "chore: refresh supporter goals + wall"
+            if git push; then exit 0; fi
+
+            echo "Push rejected (attempt $attempt): another run published first. Rebuilding on its tip."
+            git fetch -q origin main
+            git reset -q --hard origin/main
+          done
+
+          echo "::error::Could not publish after 5 attempts — a donation may be unrecorded."
+          exit 1
