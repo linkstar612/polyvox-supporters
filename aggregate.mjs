@@ -43,7 +43,14 @@ const PATRON_USD = 25;
 // The Stripe checkout custom field whose value is the donor's opt-in display
 // name. Add it to each Payment Link as an OPTIONAL text field — leaving it
 // blank is how a donor stays anonymous, so it must never be required.
-const NAME_FIELD = "displayname"; // Stripe derives the key from the label, alphanumerics only: no underscore.
+// Stripe derives the key from the label and permits alphanumerics only, so the
+// label "Display name" yields `displayname` — no underscore, however the README
+// once spelled it. Matched with non-alphanumerics stripped rather than compared
+// literally, because the cost of guessing that spelling wrong is not an error:
+// it is every donor silently landing on the wall as anonymous, indefinitely,
+// with a green workflow run each time.
+const NAME_FIELD = "displayname";
+const fieldKey = (key) => (key ?? "").toLowerCase().replace(/[^a-z0-9]/g, "");
 
 const read = async (path, fallback) => {
   try {
@@ -109,7 +116,7 @@ async function stripeEntries(key, skipPi) {
     for (const s of page.data) {
       if (s.payment_status !== "paid") continue;
       if (s.payment_intent && skipPi.has(s.payment_intent)) continue;
-      const named = (s.custom_fields ?? []).find((f) => f.key === NAME_FIELD);
+      const named = (s.custom_fields ?? []).find((f) => fieldKey(f.key) === NAME_FIELD);
       const currency = (s.currency ?? "usd").toUpperCase();
       const minor = ZERO_DECIMAL.has(currency) ? 1 : 100;
       entries.push({
