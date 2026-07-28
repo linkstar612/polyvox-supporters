@@ -1,0 +1,3 @@
+# Agent scratch that lands here when the repo is worked on from a checkout
+# nested inside the app repo's own scratch tree. Never part of the live data.
+.frugal-fable/

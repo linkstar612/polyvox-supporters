@@ -1,0 +1,54 @@
+name: aggregate-supporters
+
+# Rebuild manifest.json's goal totals + supporter wall. Three triggers:
+#   repository_dispatch — the Ko-fi doorman Worker, seconds after a donation
+#   schedule            — catches Stripe, which nothing pushes to us
+#   workflow_dispatch   — the "run it now" button
+#
+# Cron is best-effort on the free tier (often 10-45 min late), which is fine
+# for a goal bar; the Ko-fi path does not wait on it.
+on:
+  repository_dispatch:
+    types: [kofi-donation]
+  schedule:
+    - cron: "17,47 * * * *" # ~2x/hour, off :00/:30 to dodge the scheduler herd
+  workflow_dispatch: {}
+
+permissions:
+  contents: write
+
+# Never let two runs race the same file: a dispatch and a cron tick landing
+# together would both read ledger.json, both append, and the second push would
+# be rejected. Queue rather than cancel — a cancelled dispatch run is a
+# donation silently dropped.
+concurrency:
+  group: aggregate
+  cancel-in-progress: false
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Record the pushed donation
+        if: github.event_name == 'repository_dispatch'
+        env:
+          LEDGER_ENTRY: ${{ toJSON(github.event.client_payload) }}
+        run: node ledger-append.mjs
+
+      - name: Rebuild goals + wall
+        env:
+          STRIPE_RESTRICTED_KEY: ${{ secrets.STRIPE_RESTRICTED_KEY }}
+        run: node aggregate.mjs
+
+      - name: Commit if changed
+        run: |
+          git config user.name "supporters-bot"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add manifest.json ledger.json
+          git diff --cached --quiet || git commit -m "chore: refresh supporter goals + wall"
+          git push

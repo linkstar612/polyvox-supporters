@@ -1,6 +1,6 @@
 {
   "schema": 1,
-  "updated_at": "2026-07-23T00:00:00Z",
+  "updated_at": "2026-07-28T11:25:10.687Z",
   "goals": [
     {
       "id": "dev_costs",
@@ -31,40 +31,87 @@
     {
       "platform": "stripe",
       "url": "https://buy.stripe.com/14A7sM9Sa3Shf1O2yr1Nu00",
-      "regions_boost": ["*"],
-      "methods": ["card", "applepay"],
+      "regions_boost": [
+        "*"
+      ],
+      "methods": [
+        "card",
+        "applepay"
+      ],
       "tiers": [
-        { "amount_usd": 1, "url": "https://buy.stripe.com/14AdRa2pI4Wl3j67SL1Nu0b", "monthly_url": "https://buy.stripe.com/3cIdRaggy74t9Hufld1Nu0c" },
-        { "amount_usd": 3, "url": "https://buy.stripe.com/eVq14oe8q0G57zma0T1Nu01", "monthly_url": "https://buy.stripe.com/6oU14o1lE60p6vigph1Nu0d" },
-        { "amount_usd": 5, "url": "https://buy.stripe.com/14A7sM9Sa3Shf1O2yr1Nu00", "monthly_url": "https://buy.stripe.com/aFa14o7K260pcTGb4X1Nu0e" },
-        { "amount_usd": 10, "url": "https://buy.stripe.com/9B65kEc0i4Wl2f20qj1Nu02", "monthly_url": "https://buy.stripe.com/4gMcN68O6ewV7zm5KD1Nu0f" },
-        { "amount_usd": 25, "url": "https://buy.stripe.com/9B66oI8O6agFaLy7SL1Nu03", "monthly_url": "https://buy.stripe.com/6oUcN66FYgF32f27SL1Nu0g" },
-        { "amount_usd": 50, "url": "https://buy.stripe.com/6oUfZie8qcoN3j6a0T1Nu04", "monthly_url": "https://buy.stripe.com/aFa5kEfcu88x4na0qj1Nu0h" }
+        {
+          "amount_usd": 1,
+          "url": "https://buy.stripe.com/14AdRa2pI4Wl3j67SL1Nu0b",
+          "monthly_url": "https://buy.stripe.com/3cIdRaggy74t9Hufld1Nu0c"
+        },
+        {
+          "amount_usd": 3,
+          "url": "https://buy.stripe.com/eVq14oe8q0G57zma0T1Nu01",
+          "monthly_url": "https://buy.stripe.com/6oU14o1lE60p6vigph1Nu0d"
+        },
+        {
+          "amount_usd": 5,
+          "url": "https://buy.stripe.com/14A7sM9Sa3Shf1O2yr1Nu00",
+          "monthly_url": "https://buy.stripe.com/aFa14o7K260pcTGb4X1Nu0e"
+        },
+        {
+          "amount_usd": 10,
+          "url": "https://buy.stripe.com/9B65kEc0i4Wl2f20qj1Nu02",
+          "monthly_url": "https://buy.stripe.com/4gMcN68O6ewV7zm5KD1Nu0f"
+        },
+        {
+          "amount_usd": 25,
+          "url": "https://buy.stripe.com/9B66oI8O6agFaLy7SL1Nu03",
+          "monthly_url": "https://buy.stripe.com/6oUcN66FYgF32f27SL1Nu0g"
+        },
+        {
+          "amount_usd": 50,
+          "url": "https://buy.stripe.com/6oUfZie8qcoN3j6a0T1Nu04",
+          "monthly_url": "https://buy.stripe.com/aFa5kEfcu88x4na0qj1Nu0h"
+        }
       ]
     },
     {
       "platform": "kofi",
       "url": "https://ko-fi.com/hgmllc",
-      "regions_boost": ["*"],
-      "methods": ["card", "paypal"]
+      "regions_boost": [
+        "*"
+      ],
+      "methods": [
+        "card",
+        "paypal"
+      ]
     },
     {
       "platform": "patreon",
       "url": "https://www.patreon.com/cw/hgmllc",
-      "regions_boost": ["US", "EU"],
-      "methods": ["card", "paypal"]
+      "regions_boost": [
+        "US",
+        "EU"
+      ],
+      "methods": [
+        "card",
+        "paypal"
+      ]
     },
     {
       "platform": "pixiv",
       "url": "https://www.pixiv.net/en/users/126719682",
-      "regions_boost": ["JP"],
+      "regions_boost": [
+        "JP"
+      ],
       "methods": []
     },
     {
       "platform": "booth",
       "url": "https://hgmllc.booth.pm/",
-      "regions_boost": ["JP"],
-      "methods": ["card", "konbini"]
+      "regions_boost": [
+        "JP"
+      ],
+      "methods": [
+        "card",
+        "konbini"
+      ]
     }
   ],
   "supporters": [
@@ -80,13 +127,34 @@
     "base": "USD",
     "updated_at": "2026-07-21",
     "rates": {
-      "AUD": 1.4255, "BRL": 5.0794, "CAD": 1.4073, "CHF": 0.81091,
-      "CNY": 6.7661, "CZK": 21.167, "DKK": 6.5472, "EUR": 0.87581,
-      "GBP": 0.74623, "HKD": 7.8407, "HUF": 315.64, "IDR": 17898,
-      "ILS": 3.0496, "INR": 96.23, "ISK": 125.24, "JPY": 162.74,
-      "KRW": 1478.4, "MXN": 17.3943, "MYR": 4.089, "NOK": 9.6225,
-      "NZD": 1.7107, "PHP": 61.741, "PLN": 3.7927, "RON": 4.5862,
-      "SEK": 9.6764, "SGD": 1.2904, "THB": 33.665, "TRY": 47.185,
+      "AUD": 1.4255,
+      "BRL": 5.0794,
+      "CAD": 1.4073,
+      "CHF": 0.81091,
+      "CNY": 6.7661,
+      "CZK": 21.167,
+      "DKK": 6.5472,
+      "EUR": 0.87581,
+      "GBP": 0.74623,
+      "HKD": 7.8407,
+      "HUF": 315.64,
+      "IDR": 17898,
+      "ILS": 3.0496,
+      "INR": 96.23,
+      "ISK": 125.24,
+      "JPY": 162.74,
+      "KRW": 1478.4,
+      "MXN": 17.3943,
+      "MYR": 4.089,
+      "NOK": 9.6225,
+      "NZD": 1.7107,
+      "PHP": 61.741,
+      "PLN": 3.7927,
+      "RON": 4.5862,
+      "SEK": 9.6764,
+      "SGD": 1.2904,
+      "THB": 33.665,
+      "TRY": 47.185,
       "ZAR": 16.4445
     }
   }

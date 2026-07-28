@@ -1,0 +1,4 @@
+{
+  "_comment": "Append-only record of donations the Stripe API cannot see. Ko-fi, Patreon, pixiv and BOOTH are all push-only or have no read API at all, so nothing can poll them; the Ko-fi doorman Worker appends here via repository_dispatch, and the other rails are hand-appended. NEVER put an email, a Ko-fi message or any other PII in this file — it is world-readable. `name` is a display name the donor opted into showing; leave it empty for anonymous and the amount still counts toward the goal. `id` is the dedupe key (Ko-fi retries its webhook).",
+  "entries": []
+}

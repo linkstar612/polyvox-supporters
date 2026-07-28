@@ -2,43 +2,71 @@
 
 Live data for the **Polyvox VRC** Supporters page. The app fetches
 [`manifest.json`](./manifest.json) (a plain public `GET`, no auth) and renders
-the funding-goal bars, donation links, and supporter list from it. A GitHub
-Action refreshes the goal totals from Stripe on a schedule, so the bars move
-without shipping an app update.
+the funding-goal bars, the donation links, and the supporter wall from it. A
+GitHub Action rebuilds it — on a schedule for Stripe, and within seconds of a
+Ko-fi donation — so both move without shipping an app update.
 
 Kept **separate** from the release repo on purpose: this repo holds a Stripe API
-key and a bot that commits every ~30 min, and neither belongs anywhere near the
-software-update channel.
+key and a bot that commits on every donation, and neither belongs anywhere near
+the software-update channel.
 
 ## What's here
 
 | File | Role |
 |---|---|
-| `manifest.json` | The live data the app polls (schema 1). |
-| `aggregate.mjs` | Sums paid Stripe checkouts into each goal's `current_usd`. |
-| `overrides.json` | Manual per-goal $ for rails with no read API (Ko-fi, Patreon, pixiv, BOOTH). |
-| `.github/workflows/aggregate.yml` | Cron (~2×/hour) that runs the aggregator and commits changes. |
+| `manifest.json` | The live data the app polls (schema 1). Rebuilt by the Action — do not hand-edit goals or supporters. |
+| `aggregate.mjs` | Folds Stripe + `ledger.json` + `overrides.json` into the goal totals and the wall. |
+| `ledger.json` | Append-only record of donations Stripe cannot see. One entry per payment. |
+| `ledger-append.mjs` | Adds one entry from a `repository_dispatch` payload; dedupes and strips anything not allowlisted. |
+| `overrides.json` | Permanent founder entries, plus a manual per-goal $ nudge for money with no donor attached. |
+| `worker/kofi-doorman.js` | Cloudflare Worker that turns a Ko-fi webhook into a `repository_dispatch`. |
+| `.github/workflows/aggregate.yml` | Runs the above on dispatch, on cron (~2×/hour), and on demand. |
+
+## How a donation reaches the app
+
+```
+Ko-fi ──webhook──▶ Cloudflare Worker ──repository_dispatch──▶ Action
+                   (verifies token,                            │
+                    DROPS the email,                    ledger-append.mjs
+                    honours is_public)                         │
+Stripe ◀──polled by the cron───────────────────────────▶ aggregate.mjs
+                                                               │
+                                                    commit manifest.json
+                                                               │
+                                    raw.githubusercontent.com/…/manifest.json
+                                                               │
+                                          app polls it (get_supporters_manifest)
+```
+
+Ko-fi is push-only with no read API, and its webhook cannot set an
+`Authorization` header — which is exactly what `repository_dispatch` needs.
+That gap is the only reason the Worker exists.
 
 ## One-time setup
 
-1. **Restricted Stripe key** — Stripe Dashboard → Developers → API keys →
-   *Create restricted key*. Grant **read** on *Charges*, *Checkout Sessions*,
-   *PaymentIntents*, *Balance*; everything else **None**. Copy the `rk_live_…`.
-2. Add it here as a secret: repo **Settings → Secrets and variables → Actions →
-   New repository secret**, named `STRIPE_RESTRICTED_KEY`. (Never commit the key.)
+1. **Restricted Stripe key** — Dashboard → Developers → API keys → *Create
+   restricted key*. Grant **read** on *Checkout Sessions*; everything else
+   **None**. Copy the `rk_live_…`.
+2. Add it here as a secret: **Settings → Secrets and variables → Actions → New
+   repository secret**, named `STRIPE_RESTRICTED_KEY`. Never commit the key.
 3. **Map your links to goals** — edit `LINK_TO_GOAL` at the top of
    `aggregate.mjs` with your Payment Link ids (`pl_…`, from Dashboard → Payment
    Links). Anything unmapped (quick-donate tiers, custom amount) funds `living`.
-4. Run it once: **Actions → aggregate-supporters → Run workflow**. Confirm
-   `manifest.json` updates.
+4. **Deploy the Ko-fi doorman** — instructions are in the header comment of
+   [`worker/kofi-doorman.js`](./worker/kofi-doorman.js).
+5. **Add the name field to checkout** (this is what makes the wall opt-in for
+   Stripe): on each Payment Link, add an **optional** text custom field with the
+   key `display_name`, labelled something like *"Name for the supporters wall
+   (leave blank to stay anonymous)"*. Blank is anonymous; the money still counts.
+6. Run it once: **Actions → aggregate-supporters → Run workflow**.
 
-Until the secret exists the Action is a green no-op and the app just shows the
-seed numbers — nothing breaks.
+Until the Stripe secret exists the Action still runs — it just skips the Stripe
+rail and applies the ledger and overrides. Nothing breaks.
 
 ## Point the app at it
 
-In the app repo, set `MANIFEST_URL` in
-`src-tauri/src/commands/supporters.rs` to this file's raw URL:
+`MANIFEST_URL` in the app's `src-tauri/src/commands/supporters.rs` and
+`native/app/src/supporters_data.rs` already points at this file's raw URL:
 
 ```
 https://raw.githubusercontent.com/linkstar612/polyvox-supporters/main/manifest.json
@@ -47,14 +75,41 @@ https://raw.githubusercontent.com/linkstar612/polyvox-supporters/main/manifest.j
 For testing without a rebuild, launch the app with
 `POLYVOX_SUPPORTERS_MANIFEST_URL=<that URL>`.
 
+## Recording a donation by hand
+
+Patreon, pixiv and BOOTH have no read API and no webhook we can receive, so they
+are hand-appended. Add an entry to `ledger.json` and let the Action rebuild:
+
+```json
+{
+  "id": "patreon:2026-07-alex",
+  "platform": "patreon",
+  "month": "2026-07",
+  "amount": 10,
+  "currency": "USD",
+  "goal": "living",
+  "name": "Alex",
+  "link": "",
+  "recurring": true
+}
+```
+
+`id` must be unique — it is the dedupe key. `name: ""` counts toward the goal
+without naming anyone.
+
 ## Notes
 
-- **Ko-fi / Patreon / pixiv / BOOTH** have no read API — put their totals in
-  `overrides.json` by hand; the aggregator adds them on top of the Stripe sums.
-- **Cron lag**: GitHub's free scheduler runs the job 10–45 min late and skips
-  under load. A donation shows on the bar within ~an hour, not instantly.
-- **Privacy**: `manifest.json` only ever contains aggregate USD totals and
-  public links/names — never emails, card data, or raw Stripe records.
-- **Donor wall** (opt-in name/link display) is a planned addition: the checkout
-  `custom_fields` are already available to `aggregate.mjs`; wiring waits on the
-  publish/amount/field decisions.
+- **Nobody is named without opting in.** Ko-fi's `is_public` flag and Stripe's
+  blank-able `display_name` field are the two consent gates, and
+  `ledger-append.mjs` allowlists the fields that may be written at all. The
+  donor's Ko-fi *message* is never forwarded — it was written to the developer,
+  not to a public wall.
+- **`manifest.json` is rebuilt, not patched.** A name added to it by hand will
+  be gone on the next run; put founders in `overrides.json` and everyone else in
+  `ledger.json`.
+- **Amounts never reach the app per person.** The manifest carries aggregate USD
+  per goal and a tier chip per supporter; the amount that earned the tier stays
+  in `ledger.json`.
+- **Cron lag**: GitHub's free scheduler runs 10–45 min late and skips under
+  load, so Stripe donations show within ~an hour. The Ko-fi path does not wait
+  on cron — it dispatches immediately.
