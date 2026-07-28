@@ -1,4 +1,18 @@
 {
   "_comment": "Append-only record of donations the Stripe API cannot see. Ko-fi, Patreon, pixiv and BOOTH are all push-only or have no read API at all, so nothing can poll them; the Ko-fi doorman Worker appends here via repository_dispatch, and the other rails are hand-appended. NEVER put an email, a Ko-fi message or any other PII in this file — it is world-readable. `name` is a display name the donor opted into showing; leave it empty for anonymous and the amount still counts toward the goal. `id` is the dedupe key (Ko-fi retries its webhook).",
-  "entries": []
+  "entries": [
+    {
+      "id": "stripe:pi_3TwkkwJSmHrOypu31guB3l3W",
+      "platform": "stripe",
+      "month": "2026-07",
+      "amount": 5,
+      "currency": "USD",
+      "goal": "living",
+      "name": "",
+      "link": "",
+      "recurring": false,
+      "stripe_pi": "pi_3TwkkwJSmHrOypu31guB3l3W",
+      "note": "Support Polyvox, 2026-07-24. Guest checkout via plink_1Tvf0TJSmHrOypu3Vr5Ya1lT, before the display_name field existed - the donor was never asked, so anonymous until they say yes. Gross; Stripe took 0.52."
+    }
+  ]
 }

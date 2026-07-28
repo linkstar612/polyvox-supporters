@@ -50,8 +50,10 @@ That gap is the only reason the Worker exists.
 2. Add it here as a secret: **Settings → Secrets and variables → Actions → New
    repository secret**, named `STRIPE_RESTRICTED_KEY`. Never commit the key.
 3. **Map your links to goals** — edit `LINK_TO_GOAL` at the top of
-   `aggregate.mjs` with your Payment Link ids (`pl_…`, from Dashboard → Payment
-   Links). Anything unmapped (quick-donate tiers, custom amount) funds `living`.
+   `aggregate.mjs` with your Payment Link ids. That is the **`plink_…`** on the
+   link's own page (or `GET /v1/payment_links`) — *not* the `buy.stripe.com/…`
+   slug from the address bar. Anything unmapped (quick-donate tiers, custom
+   amount) funds `living`.
 4. **Deploy the Ko-fi doorman** — instructions are in the header comment of
    [`worker/kofi-doorman.js`](./worker/kofi-doorman.js).
 5. **Add the name field to checkout** (this is what makes the wall opt-in for
@@ -96,6 +98,27 @@ are hand-appended. Add an entry to `ledger.json` and let the Action rebuild:
 
 `id` must be unique — it is the dedupe key. `name: ""` counts toward the goal
 without naming anyone.
+
+### …including a Stripe payment that predates the poller
+
+If you record a **Stripe** payment by hand — one that arrived before
+`STRIPE_RESTRICTED_KEY` was configured — add its PaymentIntent as `stripe_pi`:
+
+```json
+{ "id": "stripe:pi_3Twkkw…", "platform": "stripe", "…": "…",
+  "stripe_pi": "pi_3Twkkw…" }
+```
+
+Without it the payment is counted **twice** the moment the poller goes live:
+the ledger knows a `pi_…` and the poller sees a `cs_…`, so they cannot match on
+`id` alone. `stripe_pi` is what makes `aggregate.mjs` skip that session.
+
+### Naming someone later
+
+Everyone in `ledger.json` with `name: ""` is anonymous — counted, never shown.
+To name them once they have said yes, set `name` on **every** entry that is
+theirs (that is what groups a person across months) and let the Action rebuild.
+Removing a name is the same edit in reverse.
 
 ## Notes
 

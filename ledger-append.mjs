@@ -34,6 +34,11 @@ const entry = {
   // delivers the string "false", and `Boolean("false")` is true — which would
   // read as a standing subscription and promote a one-off donor to patron.
   recurring: incoming.recurring === true || incoming.recurring === "true",
+  // Only set when a Stripe payment was recorded by hand before the poller was
+  // switched on: it is how aggregate.mjs knows not to count it twice.
+  ...(incoming.stripe_pi
+    ? { stripe_pi: String(incoming.stripe_pi).slice(0, 64) }
+    : {}),
 };
 
 if (!entry.id || !entry.platform || !/^\d{4}-\d{2}$/.test(entry.month)) {

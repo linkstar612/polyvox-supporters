@@ -19,15 +19,18 @@
 
 import { readFile, writeFile } from "node:fs/promises";
 
-// Map each Stripe Payment Link id (pl_…) to the goal it funds. Find the ids at
-// Dashboard → Payment Links, or `GET /v1/payment_links`. Any link NOT listed
-// here (the quick-donate tiers, the custom-amount link) funds DEFAULT_GOAL.
+// Map each Stripe Payment Link id to the goal it funds. The id is the `plink_…`
+// on the object — NOT the `buy.stripe.com/…` slug in the browser bar, and not
+// the `pl_…` this file used to claim. Find them at Dashboard → Payment Links
+// (the id is on the link's own page) or `GET /v1/payment_links`. Any link NOT
+// listed here — the quick-donate tiers, the custom-amount link — funds
+// DEFAULT_GOAL.
 const LINK_TO_GOAL = {
-  // "pl_...dev200":        "dev_costs",
-  // "pl_...dev200Monthly": "dev_costs",
-  // "pl_...expedited400":  "expedited",
-  // "pl_...living500":     "living",
-  // "pl_...livingMonthly": "living",
+  // "plink_...dev200":        "dev_costs",
+  // "plink_...dev200Monthly": "dev_costs",
+  // "plink_...expedited400":  "expedited",
+  // "plink_...living500":     "living",
+  // "plink_...livingMonthly": "living",
 };
 const DEFAULT_GOAL = "living";
 
@@ -66,10 +69,24 @@ async function stripe(key, path, params = {}) {
   return res.json();
 }
 
-/** Every paid checkout session, as ledger-shaped records. `amount_total` is
- *  already in the settlement currency's minor unit, so this rail needs no FX
- *  guesswork — only the ledger does. */
-async function stripeEntries(key) {
+/** Currencies with no minor unit — `amount_total` is already whole. Dividing
+ *  these by 100 would report a ¥5000 donation as ¥50. */
+const ZERO_DECIMAL = new Set([
+  "BIF", "CLP", "DJF", "GNF", "JPY", "KMF", "KRW", "MGA", "PYG",
+  "RWF", "UGX", "VND", "VUV", "XAF", "XOF", "XPF",
+]);
+
+/** Every paid checkout session, as ledger-shaped records.
+ *
+ *  `amount_total` is in the PRESENTMENT currency, which is not always yours:
+ *  with Adaptive Pricing on, a Thai donor's $5 arrives as a THB session and
+ *  reading it as USD would book it as several hundred dollars. Both the minor
+ *  unit and the FX conversion therefore come off `s.currency`.
+ *
+ *  `skipPi` holds PaymentIntent ids already written into ledger.json by hand —
+ *  a payment recorded before this rail was switched on would otherwise be
+ *  counted a second time the moment it was. */
+async function stripeEntries(key, skipPi) {
   const entries = [];
   let startingAfter;
   do {
@@ -80,12 +97,16 @@ async function stripeEntries(key) {
     });
     for (const s of page.data) {
       if (s.payment_status !== "paid") continue;
+      if (s.payment_intent && skipPi.has(s.payment_intent)) continue;
       const named = (s.custom_fields ?? []).find((f) => f.key === NAME_FIELD);
+      const currency = (s.currency ?? "usd").toUpperCase();
+      const minor = ZERO_DECIMAL.has(currency) ? 1 : 100;
       entries.push({
         id: `stripe:${s.id}`,
         platform: "stripe",
         month: monthOf(s.created * 1000),
-        usd: (s.amount_total ?? 0) / 100,
+        amount: (s.amount_total ?? 0) / minor,
+        currency,
         goal: LINK_TO_GOAL[s.payment_link] ?? DEFAULT_GOAL,
         // An absent field, an empty field, or a link carrying no field at all
         // all mean the same thing: counts toward the goal, not named.
@@ -172,14 +193,22 @@ if (!key) {
   );
 }
 
+// Anything hand-recorded from Stripe carries the PaymentIntent it came from,
+// so the poller can recognise it. The two rails cannot dedupe on `id` — the
+// ledger knows a `pi_…`, the poller sees a `cs_…` — which is what this is for.
+const skipPi = new Set(
+  ledger.entries.map((e) => e.stripe_pi).filter(Boolean),
+);
+
+// Both rails now speak amount+currency; the USD conversion happens once, here.
 const records = [
-  ...(key ? await stripeEntries(key) : []),
-  ...ledger.entries.map((e) => ({
-    ...e,
-    usd: toUsd(Number(e.amount ?? 0), e.currency, manifest.fx),
-    goal: e.goal ?? DEFAULT_GOAL,
-  })),
-];
+  ...(key ? await stripeEntries(key, skipPi) : []),
+  ...ledger.entries,
+].map((e) => ({
+  ...e,
+  usd: toUsd(Number(e.amount ?? 0), e.currency, manifest.fx),
+  goal: e.goal ?? DEFAULT_GOAL,
+}));
 
 for (const goal of manifest.goals) {
   const earned = records
