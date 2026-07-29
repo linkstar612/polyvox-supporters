@@ -1,6 +1,6 @@
 {
   "schema": 1,
-  "updated_at": "2026-07-29T14:57:08.506Z",
+  "updated_at": "2026-07-29T16:38:43.849Z",
   "goals": [
     {
       "id": "dev_costs",
@@ -22,7 +22,7 @@
       "id": "living",
       "kind": "monthly",
       "target_usd": 500,
-      "current_usd": 10,
+      "current_usd": 60,
       "fund_url": "https://buy.stripe.com/dRm28saWefAZdXK5KD1Nu07",
       "fund_monthly_url": "https://buy.stripe.com/eVq7sM8O6gF32f24Gz1Nu08"
     }
@@ -121,6 +121,17 @@
       "since": "2026-01",
       "link": "",
       "permanent": true
+    },
+    {
+      "name": "kuronosuke",
+      "tier": "patron",
+      "since": "2026-07",
+      "link": "",
+      "permanent": false,
+      "platform": "stripe",
+      "months": {
+        "2026-07": "patron"
+      }
     },
     {
       "name": "Amber",
