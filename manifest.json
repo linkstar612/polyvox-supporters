@@ -1,6 +1,6 @@
 {
   "schema": 1,
-  "updated_at": "2026-07-29T07:29:48.406Z",
+  "updated_at": "2026-07-29T10:17:16.383Z",
   "goals": [
     {
       "id": "dev_costs",
@@ -22,7 +22,7 @@
       "id": "living",
       "kind": "monthly",
       "target_usd": 500,
-      "current_usd": 5,
+      "current_usd": 10,
       "fund_url": "https://buy.stripe.com/dRm28saWefAZdXK5KD1Nu07",
       "fund_monthly_url": "https://buy.stripe.com/eVq7sM8O6gF32f24Gz1Nu08"
     }
@@ -121,6 +121,17 @@
       "since": "2026-01",
       "link": "",
       "permanent": true
+    },
+    {
+      "name": "Amber",
+      "tier": "supporter",
+      "since": "2026-07",
+      "link": "",
+      "permanent": false,
+      "platform": "stripe",
+      "months": {
+        "2026-07": "supporter"
+      }
     }
   ],
   "fx": {
