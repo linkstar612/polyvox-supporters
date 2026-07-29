@@ -13,6 +13,17 @@
       "recurring": false,
       "stripe_pi": "pi_3TwkkwJSmHrOypu31guB3l3W",
       "note": "Support Polyvox, 2026-07-24. Guest checkout via plink_1Tvf0TJSmHrOypu3Vr5Ya1lT, before the display_name field existed - the donor was never asked, so anonymous until they say yes. Gross; Stripe took 0.52."
+    },
+    {
+      "id": "kofi:f5955c06-8269-454b-a460-b801f1ad2efc",
+      "platform": "kofi",
+      "month": "2026-07",
+      "amount": 25,
+      "currency": "USD",
+      "goal": "living",
+      "name": "",
+      "link": "",
+      "recurring": false
     }
   ]
 }
