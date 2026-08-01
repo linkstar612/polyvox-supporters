@@ -24,6 +24,17 @@
       "name": "",
       "link": "",
       "recurring": false
+    },
+    {
+      "id": "kofi:974cc979-47e4-464e-bd9d-a165c817053f",
+      "platform": "kofi",
+      "month": "2026-08",
+      "amount": 5,
+      "currency": "USD",
+      "goal": "living",
+      "name": "Somebody",
+      "link": "",
+      "recurring": false
     }
   ]
 }

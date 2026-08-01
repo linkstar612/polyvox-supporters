@@ -1,6 +1,6 @@
 {
   "schema": 1,
-  "updated_at": "2026-08-01T21:35:38.611Z",
+  "updated_at": "2026-08-01T22:05:26.952Z",
   "goals": [
     {
       "id": "dev_costs",
@@ -22,7 +22,7 @@
       "id": "living",
       "kind": "monthly",
       "target_usd": 500,
-      "current_usd": 85,
+      "current_usd": 90,
       "fund_url": "https://buy.stripe.com/dRm28saWefAZdXK5KD1Nu07",
       "fund_monthly_url": "https://buy.stripe.com/eVq7sM8O6gF32f24Gz1Nu08"
     }
@@ -142,6 +142,17 @@
       "platform": "stripe",
       "months": {
         "2026-07": "supporter"
+      }
+    },
+    {
+      "name": "Somebody",
+      "tier": "supporter",
+      "since": "2026-08",
+      "link": "",
+      "permanent": false,
+      "platform": "kofi",
+      "months": {
+        "2026-08": "supporter"
       }
     }
   ],
