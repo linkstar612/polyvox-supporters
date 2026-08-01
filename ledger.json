@@ -35,6 +35,17 @@
       "name": "Somebody",
       "link": "",
       "recurring": false
+    },
+    {
+      "id": "kofi:5af0f90d-f967-4ec7-b45a-172b2be07607",
+      "platform": "kofi",
+      "month": "2026-08",
+      "amount": 5,
+      "currency": "USD",
+      "goal": "living",
+      "name": "我心态很差",
+      "link": "",
+      "recurring": false
     }
   ]
 }
