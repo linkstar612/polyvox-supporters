@@ -1,6 +1,6 @@
 {
   "schema": 1,
-  "updated_at": "2026-08-04T04:29:16.445Z",
+  "updated_at": "2026-08-04T05:49:20.276Z",
   "goals": [
     {
       "id": "dev_costs",
@@ -22,7 +22,7 @@
       "id": "living",
       "kind": "monthly",
       "target_usd": 500,
-      "current_usd": 95,
+      "current_usd": 105,
       "fund_url": "https://buy.stripe.com/dRm28saWefAZdXK5KD1Nu07",
       "fund_monthly_url": "https://buy.stripe.com/eVq7sM8O6gF32f24Gz1Nu08"
     }
@@ -157,6 +157,17 @@
     },
     {
       "name": "我心态很差",
+      "tier": "supporter",
+      "since": "2026-08",
+      "link": "",
+      "permanent": false,
+      "platform": "kofi",
+      "months": {
+        "2026-08": "supporter"
+      }
+    },
+    {
+      "name": "flizee",
       "tier": "supporter",
       "since": "2026-08",
       "link": "",

@@ -46,6 +46,17 @@
       "name": "我心态很差",
       "link": "",
       "recurring": false
+    },
+    {
+      "id": "kofi:9ea7183f-1ae2-474e-b153-0b43d926765d",
+      "platform": "kofi",
+      "month": "2026-08",
+      "amount": 10,
+      "currency": "USD",
+      "goal": "living",
+      "name": "flizee",
+      "link": "",
+      "recurring": false
     }
   ]
 }
