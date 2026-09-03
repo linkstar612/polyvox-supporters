@@ -14,7 +14,7 @@ the software-update channel.
 
 | File | Role |
 |---|---|
-| `manifest.json` | The live data the app polls (schema 1). Rebuilt by the Action — do not hand-edit goals or supporters. |
+| `manifest.json` | The live data the app polls (schema 1). Rebuilt by the Action — do not hand-edit goals or supporters. The two top-level `cn_alipay_url` / `cn_wechat_url` keys are the exception: hand-kept payloads of the mainland wallet codes, which `aggregate.mjs` parses and writes back untouched (see the app repo's `docs/CN-QR-DONATION-SETUP.md`). |
 | `aggregate.mjs` | Folds Stripe + `ledger.json` + `overrides.json` into the goal totals and the wall. |
 | `ledger.json` | Append-only record of donations Stripe cannot see. One entry per payment. |
 | `ledger-append.mjs` | Adds one entry from a `repository_dispatch` payload; dedupes and strips anything not allowlisted. |
