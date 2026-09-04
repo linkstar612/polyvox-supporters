@@ -1,6 +1,6 @@
 {
   "schema": 1,
-  "updated_at": "2026-09-04T17:07:21.856Z",
+  "updated_at": "2026-09-04T18:09:25.583Z",
   "cn_alipay_url": "https://qr.alipay.com/fkx14384xioygstaelud788",
   "cn_wechat_url": "wxp://f2f07UkFj13wEYYj9mfCh7kxiNOI96I8GAuxdFp36sC7nv7yQDhHYNTGZ6N0Dye5X3ZM",
   "goals": [
@@ -24,7 +24,7 @@
       "id": "living",
       "kind": "monthly",
       "target_usd": 500,
-      "current_usd": 110,
+      "current_usd": 115,
       "fund_url": "https://buy.stripe.com/dRm28saWefAZdXK5KD1Nu07",
       "fund_monthly_url": "https://buy.stripe.com/eVq7sM8O6gF32f24Gz1Nu08"
     }
@@ -188,6 +188,17 @@
       "platform": "kofi",
       "months": {
         "2026-08": "supporter"
+      }
+    },
+    {
+      "name": "Loki",
+      "tier": "supporter",
+      "since": "2026-09",
+      "link": "",
+      "permanent": false,
+      "platform": "kofi",
+      "months": {
+        "2026-09": "supporter"
       }
     }
   ],

@@ -57,6 +57,17 @@
       "name": "flizee",
       "link": "",
       "recurring": false
+    },
+    {
+      "id": "kofi:268bfcc9-f3db-4fa1-9e84-5d406ed6422d",
+      "platform": "kofi",
+      "month": "2026-09",
+      "amount": 5,
+      "currency": "USD",
+      "goal": "living",
+      "name": "Loki",
+      "link": "",
+      "recurring": false
     }
   ]
 }
