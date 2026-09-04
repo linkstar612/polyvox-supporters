@@ -5,19 +5,37 @@
 // ledger. Needs one secret: STRIPE_RESTRICTED_KEY — a READ-ONLY restricted key
 // (Checkout Sessions: read). Never commit it.
 //
-// Three sources, one output:
+// Four sources, two outputs:
 //
-//   Stripe API      — polled here, attributed to a goal by payment-link id
-//   ledger.json     — the push-only rails (Ko-fi via the Worker; Patreon,
-//                     pixiv, BOOTH by hand). One record per payment.
-//   overrides.json  — a manual per-goal USD nudge, plus the permanent
-//                     founder entries that predate any payment rail.
+//   Stripe API      · polled here, attributed to a goal by payment-link id
+//   Afdian API      · the CN rail, polled through afdian.mjs. Orders move the
+//                     goal, sponsors name the wall (AFDIAN_USER_ID +
+//                     AFDIAN_TOKEN). WeChat and Alipay personal codes are NOT
+//                     this rail and cannot be polled by anything: that money
+//                     reaches a goal only as a hand ledger.json entry.
+//   ledger.json     · the push-only rails (Ko-fi via the Worker; Patreon,
+//                     pixiv, BOOTH, WeChat and Alipay by hand). One record per
+//                     payment.
+//   overrides.json  · a manual per-goal USD nudge, the CNY rate, the wall
+//                     strike list, and the permanent founder entries that
+//                     predate any payment rail.
+//
+// The second output is `manifest.testers` (R-DON.6): the opt-in pre-alpha
+// tester roster, read from the license mint with MINT_ADMIN_TOKEN. Nobody is on
+// it who did not ask to be.
 //
 // Node 20+ (global fetch, no npm install). Nothing secret and nothing
 // identifying is ever written to manifest.json: aggregate USD per goal, and
 // display names their owners opted into showing.
 
 import { readFile, writeFile } from "node:fs/promises";
+
+import { afdianOrders, afdianSponsors, orderRecords, sponsorRecords } from "./afdian.mjs";
+
+/// The license mint that holds the tester wall. Its hostname is compiled into
+/// every shipped build (`TRUSTED_INGEST_HOSTS`), so naming it here is not a
+/// disclosure; the admin token that reads it is the secret.
+const MINT_BASE_URL = "https://polyvox-license-mint.terry61295.workers.dev";
 
 // Map each Stripe Payment Link id to the goal it funds. The id is the `plink_…`
 // on the object — NOT the `buy.stripe.com/…` slug in the browser bar, and not
@@ -204,11 +222,46 @@ const manifest = JSON.parse(await readFile("manifest.json", "utf8"));
 const overrides = await read("overrides.json", { manual_usd: {}, founders: [] });
 const ledger = await read("ledger.json", { entries: [] });
 
+// One FX table, not two. `overrides.fx.cny_per_usd` is patched over the
+// manifest's own snapshot rather than becoming a second conversion path: the CN
+// rail bills in yuan, the manifest snapshot is only refreshed when someone
+// remembers to, and two converters would eventually disagree about the same
+// donation.
+const fx = { ...(manifest.fx ?? {}), rates: { ...(manifest.fx?.rates ?? {}) } };
+const cnyPerUsd = Number(overrides.fx?.cny_per_usd);
+if (Number.isFinite(cnyPerUsd) && cnyPerUsd > 0) fx.rates.CNY = cnyPerUsd;
+
 const key = process.env.STRIPE_RESTRICTED_KEY;
 if (!key) {
   console.warn(
     "STRIPE_RESTRICTED_KEY not set — Stripe totals skipped; ledger + overrides still applied.",
   );
+}
+
+// --- Afdian (爱发电), the CN rail ---------------------------------------------
+
+const afdianUserId = process.env.AFDIAN_USER_ID;
+const afdianToken = process.env.AFDIAN_TOKEN;
+// Which goal CN money funds. The owner names it in overrides.json; the fallback
+// is the first goal rather than DEFAULT_GOAL so a renamed or reordered goal list
+// cannot silently drop the rail into a goal that no longer exists.
+const afdianGoal = overrides.afdian_goal ?? manifest.goals?.[0]?.id ?? DEFAULT_GOAL;
+let afdianEntries = [];
+let afdianWall = [];
+if (!afdianUserId || !afdianToken) {
+  console.warn(
+    "AFDIAN_USER_ID / AFDIAN_TOKEN not set. Afdian orders and sponsors skipped; every other rail still applied.",
+  );
+} else {
+  const creds = { userId: afdianUserId, token: afdianToken };
+  // An Afdian order recorded by hand before this rail existed carries the same
+  // `afdian:<out_trade_no>` id, which is what stops it being counted twice.
+  const skipIds = new Set(ledger.entries.map((e) => e.id).filter(Boolean));
+  afdianEntries = orderRecords(await afdianOrders(creds), { goal: afdianGoal, skipIds });
+  // Sponsors carry a display name and no money. They are handed to the wall and
+  // to nothing else: the same yuan is already in `afdianEntries`, and
+  // `all_sum_amount` is a lifetime total that would be re-added on every run.
+  afdianWall = sponsorRecords(await afdianSponsors(creds));
 }
 
 // Anything hand-recorded from Stripe carries the PaymentIntent it came from,
@@ -222,9 +275,10 @@ const skipPi = new Set(
 const records = [
   ...(key ? await stripeEntries(key, skipPi) : []),
   ...ledger.entries,
+  ...afdianEntries,
 ].map((e) => ({
   ...e,
-  usd: toUsd(Number(e.amount ?? 0), e.currency, manifest.fx),
+  usd: toUsd(Number(e.amount ?? 0), e.currency, fx),
   goal: e.goal ?? DEFAULT_GOAL,
 }));
 
@@ -236,7 +290,46 @@ for (const goal of manifest.goals) {
   goal.current_usd = Math.round((earned + manual) * 100) / 100;
 }
 
-manifest.supporters = buildWall(records, overrides.founders ?? []);
+manifest.supporters = buildWall([...records, ...afdianWall], overrides.founders ?? []);
+
+// --- R-DON.6: the opt-in pre-alpha tester roster ------------------------------
+//
+// Read from the mint rather than derived here, because the mint is the only
+// thing that can check an Ed25519 signature against the shipped keys, and an
+// opt-in anyone could forge is not a verification.
+//
+// Never fatal. A missing token or an unreachable Worker leaves `manifest.testers`
+// exactly as the last good run wrote it: this same script publishes the donation
+// totals, and failing the run over a badge would cost a donation its record.
+const mintToken = process.env.MINT_ADMIN_TOKEN;
+if (!mintToken) {
+  console.warn("MINT_ADMIN_TOKEN not set. Tester wall skipped; manifest.testers left unchanged.");
+} else {
+  const base = (process.env.MINT_BASE_URL ?? MINT_BASE_URL).replace(/[/]+$/, "");
+  try {
+    const res = await fetch(`${base}/wall`, {
+      headers: { authorization: `Bearer ${mintToken}` },
+    });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const { testers } = await res.json();
+    // The owner's strike list. Matched case-folded on the display name, which
+    // is the only identifier this endpoint returns.
+    const struck = new Set(
+      (overrides.wall_exclude ?? []).map((n) => String(n).trim().toLowerCase()),
+    );
+    manifest.testers = (Array.isArray(testers) ? testers : [])
+      .filter((t) => t?.name && !struck.has(String(t.name).trim().toLowerCase()))
+      .map((t) => ({
+        name: String(t.name).trim().slice(0, 48),
+        badge: String(t.badge ?? ""),
+        since: String(t.since ?? ""),
+      }))
+      .sort((a, b) => a.since.localeCompare(b.since) || a.name.localeCompare(b.name));
+  } catch (e) {
+    console.error(`Tester wall not refreshed (${e.message}); manifest.testers left unchanged.`);
+  }
+}
+
 manifest.updated_at = new Date().toISOString();
 
 await writeFile("manifest.json", `${JSON.stringify(manifest, null, 2)}\n`);
@@ -246,5 +339,6 @@ console.log(
   "Goals:",
   manifest.goals.map((g) => `${g.id}=$${g.current_usd}`).join("  "),
   `| wall: ${manifest.supporters.length} (${earned} earned)`,
+  `| testers: ${(manifest.testers ?? []).length}`,
   `| records: ${records.length}`,
 );

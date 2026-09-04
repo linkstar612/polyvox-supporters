@@ -1,10 +1,17 @@
 {
-  "_comment": "Hand-kept inputs to aggregate.mjs. `manual_usd` is a per-goal USD nudge for money no rail reports — prefer a ledger.json entry, which also earns the donor a card; use this only for lump sums with no donor attached. `founders` is prepended to the wall verbatim: aggregate.mjs REBUILDS manifest.supporters on every run, so a name that is not here and not in the ledger will not survive the next commit.",
+  "_comment": "Hand-kept inputs to aggregate.mjs. `manual_usd` is a per-goal USD nudge for money no rail reports - prefer a ledger.json entry, which also earns the donor a card; use this only for lump sums with no donor attached. `founders` is prepended to the wall verbatim: aggregate.mjs REBUILDS manifest.supporters on every run, so a name that is not here and not in the ledger will not survive the next commit. `fx.cny_per_usd` is patched over manifest.fx.rates.CNY before any conversion runs and is what the Afdian rail and hand-recorded WeChat/Alipay entries are converted with; refresh it when it drifts and move `as_of` with it. `afdian_goal` names the goal Afdian orders fund. `wall_exclude` is the owner's strike list for the opt-in tester wall (R-DON.6), matched case-folded on the display name.",
   "manual_usd": {
     "dev_costs": 0,
     "expedited": 0,
     "living": 0
   },
+  "fx": {
+    "cny_per_usd": 6.7179,
+    "as_of": "2026-09-03",
+    "source": "tradingeconomics.com/china/currency, USD/CNY close 2026-09-03. Overrides the 6.7661 snapshot manifest.fx carries from 2026-07-21."
+  },
+  "afdian_goal": "living",
+  "wall_exclude": [],
   "founders": [
     {
       "name": "The Polyvox Team",

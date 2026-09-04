@@ -1,0 +1,9 @@
+{
+  "name": "polyvox-supporters",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Goal totals and the supporter wall for Polyvox. No dependencies: everything here runs on Node 20's own globals.",
+  "scripts": {
+    "test": "node --test \"test/**/*.test.mjs\""
+  }
+}

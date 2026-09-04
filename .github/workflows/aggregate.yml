@@ -53,6 +53,14 @@ jobs:
       - name: Rebuild and publish
         env:
           STRIPE_RESTRICTED_KEY: ${{ secrets.STRIPE_RESTRICTED_KEY }}
+          # The CN rail. Both are needed or neither is used; aggregate.mjs
+          # prints a skip notice and every other rail still publishes.
+          AFDIAN_USER_ID: ${{ secrets.AFDIAN_USER_ID }}
+          AFDIAN_TOKEN: ${{ secrets.AFDIAN_TOKEN }}
+          # R-DON.6: reads the opt-in tester roster from the license mint. Same
+          # value as the Worker's ADMIN_TOKEN secret. Unset leaves
+          # manifest.testers exactly as the last good run wrote it.
+          MINT_ADMIN_TOKEN: ${{ secrets.MINT_ADMIN_TOKEN }}
           IS_DISPATCH: ${{ github.event_name == 'repository_dispatch' }}
           LEDGER_ENTRY: ${{ toJSON(github.event.client_payload) }}
         run: |
