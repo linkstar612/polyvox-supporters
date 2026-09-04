@@ -1,5 +1,5 @@
 {
-  "_comment": "Hand-kept inputs to aggregate.mjs. `manual_usd` is a per-goal USD nudge for money no rail reports - prefer a ledger.json entry, which also earns the donor a card; use this only for lump sums with no donor attached. `founders` is prepended to the wall verbatim: aggregate.mjs REBUILDS manifest.supporters on every run, so a name that is not here and not in the ledger will not survive the next commit. `fx.cny_per_usd` is patched over manifest.fx.rates.CNY before any conversion runs and is what the Afdian rail and hand-recorded WeChat/Alipay entries are converted with; refresh it when it drifts and move `as_of` with it. `afdian_goal` names the goal Afdian orders fund. `wall_exclude` is the owner's strike list for the opt-in tester wall (R-DON.6), matched case-folded on the display name.",
+  "_comment": "Hand-kept inputs to aggregate.mjs. `manual_usd` is a per-goal USD nudge for money no rail reports - prefer a ledger.json entry, which also earns the donor a card; use this only for lump sums with no donor attached. `founders` is prepended to the wall verbatim: aggregate.mjs REBUILDS manifest.supporters on every run, so a name that is not here and not in the ledger will not survive the next commit. `fx.cny_per_usd` is patched over manifest.fx.rates.CNY before any conversion runs and is what the Afdian rail and hand-recorded WeChat/Alipay entries are converted with; refresh it when it drifts and move `as_of` with it. `afdian_goal` names the goal Afdian orders fund. `wall_approved` is the opt-in tester wall (R-DON.6): a tester is published ONLY once their `key` from wall-pending.json is listed here, so opting in is a request and this file is the decision. `wall_exclude` strikes a name already approved, matched case-folded against the key or the display name.",
   "manual_usd": {
     "dev_costs": 0,
     "expedited": 0,
@@ -11,6 +11,7 @@
     "source": "tradingeconomics.com/china/currency, USD/CNY close 2026-09-03. Overrides the 6.7661 snapshot manifest.fx carries from 2026-07-21."
   },
   "afdian_goal": "living",
+  "wall_approved": [],
   "wall_exclude": [],
   "founders": [
     {

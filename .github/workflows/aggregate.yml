@@ -71,7 +71,7 @@ jobs:
             if [ "$IS_DISPATCH" = "true" ]; then node ledger-append.mjs; fi
             node aggregate.mjs
 
-            git add manifest.json ledger.json
+            git add manifest.json ledger.json wall-pending.json
             if git diff --cached --quiet; then
               echo "Nothing changed — already published by another run."
               exit 0

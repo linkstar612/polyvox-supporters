@@ -22,7 +22,8 @@
 //
 // The second output is `manifest.testers` (R-DON.6): the opt-in pre-alpha
 // tester roster, read from the license mint with MINT_ADMIN_TOKEN. Nobody is on
-// it who did not ask to be.
+// it who did not ask to be AND was not then approved by the owner; everyone
+// else waits in `wall-pending.json`.
 //
 // Node 20+ (global fetch, no npm install). Nothing secret and nothing
 // identifying is ever written to manifest.json: aggregate USD per goal, and
@@ -31,6 +32,7 @@
 import { readFile, writeFile } from "node:fs/promises";
 
 import { afdianOrders, afdianSponsors, orderRecords, sponsorRecords } from "./afdian.mjs";
+import { partitionTesters } from "./wall.mjs";
 
 /// The license mint that holds the tester wall. Its hostname is compiled into
 /// every shipped build (`TRUSTED_INGEST_HOSTS`), so naming it here is not a
@@ -312,19 +314,39 @@ if (!mintToken) {
     });
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     const { testers } = await res.json();
-    // The owner's strike list. Matched case-folded on the display name, which
-    // is the only identifier this endpoint returns.
-    const struck = new Set(
-      (overrides.wall_exclude ?? []).map((n) => String(n).trim().toLowerCase()),
+    const { published, pending } = partitionTesters({
+      testers: Array.isArray(testers) ? testers : [],
+      approved: overrides.wall_approved ?? [],
+      excluded: overrides.wall_exclude ?? [],
+    });
+    manifest.testers = published;
+
+    // Written whether or not anything is waiting, because an empty file is the
+    // only way "nobody is pending" can be told apart from "the pull failed and
+    // this file is stale".
+    await writeFile(
+      "wall-pending.json",
+      `${JSON.stringify(
+        {
+          _comment:
+            "Opted-in testers waiting for the owner. Rebuilt by aggregate.mjs on every run; editing it does nothing. To publish someone, copy their `key` into overrides.json -> wall_approved. To turn one down, leave it here: nothing is published from this file.",
+          updated_at: new Date().toISOString(),
+          pending,
+        },
+        null,
+        2,
+      )}
+`,
     );
-    manifest.testers = (Array.isArray(testers) ? testers : [])
-      .filter((t) => t?.name && !struck.has(String(t.name).trim().toLowerCase()))
-      .map((t) => ({
-        name: String(t.name).trim().slice(0, 48),
-        badge: String(t.badge ?? ""),
-        since: String(t.since ?? ""),
-      }))
-      .sort((a, b) => a.since.localeCompare(b.since) || a.name.localeCompare(b.name));
+    for (const p of pending) {
+      console.log(`PENDING ${p.key}  ${p.badge.padEnd(8)} since ${p.since}  ${p.name}`);
+    }
+    console.log(
+      `Tester wall: ${published.length} published, ${pending.length} awaiting approval` +
+        (pending.length
+          ? " (copy a key above into overrides.json -> wall_approved to publish it)"
+          : ""),
+    );
   } catch (e) {
     console.error(`Tester wall not refreshed (${e.message}); manifest.testers left unchanged.`);
   }

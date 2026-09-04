@@ -20,7 +20,9 @@ the software-update channel.
 | `test/` | `npm test` (`node --test "test/**/*.test.mjs"`). No dependencies. |
 | `ledger.json` | Append-only record of donations Stripe cannot see. One entry per payment. |
 | `ledger-append.mjs` | Adds one entry from a `repository_dispatch` payload; dedupes and strips anything not allowlisted. |
-| `overrides.json` | Permanent founder entries, a manual per-goal $ nudge for money with no donor attached, the CNY rate, the Afdian goal, and the tester-wall strike list. |
+| `overrides.json` | Permanent founder entries, a manual per-goal $ nudge for money with no donor attached, the CNY rate, the Afdian goal, and the tester-wall approval and strike lists. |
+| `wall.mjs` | Splits the opted-in roster into what is approved and what is waiting. |
+| `wall-pending.json` | Opted-in testers waiting for the owner. Rebuilt every run; a queue, never a roster. |
 | `worker/kofi-doorman.js` | Cloudflare Worker that turns a Ko-fi webhook into a `repository_dispatch`. |
 | `.github/workflows/aggregate.yml` | Runs the above on dispatch, on cron (~2×/hour), and on demand. |
 
@@ -208,9 +210,13 @@ Details worth knowing:
 ## The opt-in pre-alpha tester wall (R-DON.6)
 
 `manifest.testers` is a roster of people who *asked* to be acknowledged as early
-testers. It is not derived here: `aggregate.mjs` reads
-`GET /wall` from the license mint Worker, which is the only thing that can check
-an Ed25519 signature against the shipped keys.
+testers **and whom the owner then approved**. It is not derived here:
+`aggregate.mjs` reads `GET /wall` from the license mint Worker, which is the only
+thing that can check an Ed25519 signature against the shipped keys.
+
+Opting in through the app is a **request**. Nothing is published until its key is
+in `overrides.json` → `wall_approved`, so an unreviewed name cannot appear on a
+page the owner publishes under their own name.
 
 | Secret | Value |
 |---|---|
@@ -223,17 +229,42 @@ Set `MINT_BASE_URL` as an Actions *variable* only if the Worker ever moves.
   exactly as the last good run wrote it. An unreachable Worker does the same and
   logs an error rather than failing the run: this script also publishes the
   donation totals, and failing it over a badge would cost a donation its record.
-- **Three fields per person**, and the endpoint returns nothing else:
+- **Four fields per person**, and the endpoint returns nothing else:
 
   ```json
-  { "name": "Sam", "badge": "prealpha", "since": "2026-07-04" }
+  { "id": "a1b2c3d4e5f60718", "name": "Sam", "badge": "prealpha", "since": "2026-07-04" }
   ```
 
   No machine code, no license, no role. A value that never crosses the wire
-  cannot end up in this public file by mistake.
-- **`overrides.json` → `wall_exclude`** strikes a name (case-folded). Removing
-  someone properly is `DELETE /wall/opt-in` from the app, which is theirs to do;
-  `wall_exclude` is the owner's override for a name that should not be published.
+  cannot end up in this public file by mistake. `id` is the approval key; only
+  `name`, `badge` and `since` reach `manifest.testers`.
+- **`overrides.json` → `wall_exclude`** strikes someone already approved,
+  matching either the key or the display name (case-folded), and beats an
+  approval. Leaving instead of being struck is `DELETE /wall/opt-in` from the
+  app, which is theirs to do.
+
+### Approving a tester
+
+1. Every run rewrites **`wall-pending.json`** with everyone who has opted in and
+   is not yet approved, and prints one `PENDING` line each plus a count:
+
+   ```
+   PENDING a1b2c3d4e5f60718  prealpha since 2026-07-04  Zoe
+   Tester wall: 0 published, 1 awaiting approval (copy a key above into overrides.json → wall_approved to publish it)
+   ```
+
+2. To publish someone, copy their **`key`** into `overrides.json` →
+   `wall_approved` and commit. The next run moves them into `manifest.testers`
+   and drops them from the pending file.
+3. To turn someone down, do nothing. They stay in `wall-pending.json`, which is
+   a queue and not a roster: nothing is ever published from it.
+4. To remove someone already published, add their key or their name to
+   `wall_exclude`. That beats the approval, and they do not return to the queue.
+
+The key is a one-way digest of the machine code, computed by the Worker. It is
+stable across a rename, which is why approval is not keyed on the display name,
+and it is not the machine code, which is the seat key and does not belong in a
+public file.
 
 ## Notes
 
