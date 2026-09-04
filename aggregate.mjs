@@ -328,8 +328,7 @@ if (!mintToken) {
       "wall-pending.json",
       `${JSON.stringify(
         {
-          _comment:
-            "Opted-in testers waiting for the owner. Rebuilt by aggregate.mjs on every run; editing it does nothing. To publish someone, copy their `key` into overrides.json -> wall_approved. To turn one down, leave it here: nothing is published from this file.",
+          _comment: "Opted-in testers waiting for the owner. Rebuilt by aggregate.mjs on every run; editing it does nothing. This file is PUBLIC, like everything here, so an opt-in is visible before it is approved. To publish someone, copy their `key` into overrides.json -> wall_approved. To turn someone down, add their key to overrides.json -> wall_exclude, which drops them from this file on the next run.",
           updated_at: new Date().toISOString(),
           pending,
         },

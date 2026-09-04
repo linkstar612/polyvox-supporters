@@ -256,10 +256,16 @@ Set `MINT_BASE_URL` as an Actions *variable* only if the Worker ever moves.
 2. To publish someone, copy their **`key`** into `overrides.json` →
    `wall_approved` and commit. The next run moves them into `manifest.testers`
    and drops them from the pending file.
-3. To turn someone down, do nothing. They stay in `wall-pending.json`, which is
-   a queue and not a roster: nothing is ever published from it.
-4. To remove someone already published, add their key or their name to
-   `wall_exclude`. That beats the approval, and they do not return to the queue.
+3. To turn someone down, or to remove someone already published, add their key
+   or their name to `wall_exclude`. It beats an approval and it also drops them
+   from `wall-pending.json`, so the same decision is not offered again on every
+   run. Leaving an entry pending is not a rejection: it is a decision not yet
+   made, and it stays visible until one is.
+
+`wall-pending.json` is **public**, like everything else in this repo, so an
+opt-in is visible before it is approved. That is within what the tester agreed
+to (they asked to be shown), but it means the gate controls the app's supporter
+wall, not the existence of the request.
 
 The key is a one-way digest of the machine code, computed by the Worker. It is
 stable across a rename, which is why approval is not keyed on the display name,

@@ -1,5 +1,5 @@
 {
-  "_comment": "Opted-in testers waiting for the owner. Rebuilt by aggregate.mjs on every run; editing it does nothing. To publish someone, copy their `key` into overrides.json -> wall_approved. To turn one down, leave it here: nothing is published from this file. Committed empty so the workflow's `git add` always has a path, and so an empty list can be told apart from a run that never got this far.",
+  "_comment": "Opted-in testers waiting for the owner. Rebuilt by aggregate.mjs on every run; editing it does nothing. This file is PUBLIC, like everything here, so an opt-in is visible before it is approved. To publish someone, copy their `key` into overrides.json -> wall_approved. To turn someone down, add their key to overrides.json -> wall_exclude, which drops them from this file on the next run. Committed empty so the workflow's `git add` always has a path, and so an empty list can be told apart from a run that never got this far.",
   "updated_at": null,
   "pending": []
 }
