@@ -68,6 +68,42 @@
       "name": "Loki",
       "link": "",
       "recurring": false
+    },
+    {
+      "id": "wechat:2026-09-05-1651-1.00",
+      "platform": "wechat",
+      "month": "2026-09",
+      "amount": 1,
+      "currency": "CNY",
+      "goal": "living",
+      "name": "",
+      "link": "",
+      "recurring": false,
+      "note": "Personal WeChat collection code (R-DON.7), bill line from アたる 2026-09-05. No memo, so anonymous."
+    },
+    {
+      "id": "wechat:2026-09-05-1652-66.00",
+      "platform": "wechat",
+      "month": "2026-09",
+      "amount": 66,
+      "currency": "CNY",
+      "goal": "living",
+      "name": "",
+      "link": "",
+      "recurring": false,
+      "note": "Personal WeChat collection code (R-DON.7), bill line from アたる 2026-09-05. No memo, so anonymous."
+    },
+    {
+      "id": "wechat:2026-09-05-1910-1.00",
+      "platform": "wechat",
+      "month": "2026-09",
+      "amount": 1,
+      "currency": "CNY",
+      "goal": "living",
+      "name": "我心态很差",
+      "link": "",
+      "recurring": false,
+      "note": "Payer memo was this exact string, which is already an opted-in wall name from Ko-fi (kofi:5af0f90d). Credited on that match; strike the name if it was not them."
     }
   ]
 }

@@ -20,6 +20,7 @@ the software-update channel.
 | `test/` | `npm test` (`node --test "test/**/*.test.mjs"`). No dependencies. |
 | `ledger.json` | Append-only record of donations Stripe cannot see. One entry per payment. |
 | `ledger-append.mjs` | Adds one entry from a `repository_dispatch` payload; dedupes and strips anything not allowlisted. |
+| `cn-record.mjs` | Turns a WeChat / Alipay bill line into a ledger entry and hands it to `ledger-append.mjs`. The manual half of the mainland rail. |
 | `overrides.json` | Permanent founder entries, a manual per-goal $ nudge for money with no donor attached, the CNY rate, the Afdian goal, and the tester-wall approval and strike lists. |
 | `wall.mjs` | Splits the opted-in roster into what is approved and what is waiting. |
 | `wall-pending.json` | Opted-in testers waiting for the owner. Rebuilt every run; a queue, never a roster. |
@@ -136,17 +137,46 @@ exposes an API for one, so a payment scanned into it is invisible to
 `aggregate.mjs` until a human writes it down. Until that entry exists the goal
 bars have not moved and the donor is nowhere on the wall.
 
-Record it by adding an entry to `ledger.json` and letting the Action rebuild.
-`platform` is the rail (`wechat` or `alipay`; `ledger-append.mjs` accepts any
-non-empty value and does not need a code change for these), and `amount` is the
-figure actually received:
+The rail is therefore a person and one command:
+
+1. **The payer** scans the code in the app's Supporters tab. The card tells them
+   to type the name they want shown into the payment memo (微信 付款备注 /
+   支付宝 备注) and to leave it blank to stay anonymous. That memo is the only
+   consent the wall ever gets from this rail.
+2. **アたる** forwards the bill lines whenever she likes (a screenshot of
+   微信 收款小账本 / 支付宝 账单 is enough): platform, date, time, yuan, and the
+   memo if there was one. The masked payer name the bill shows (`*饭`) is not
+   part of it.
+3. **The owner** records each line with `cn-record.mjs`, which builds the entry
+   and hands it to `ledger-append.mjs` (same validation and dedupe as the Ko-fi
+   path), then commits `ledger.json`. The Action rebuilds the goal bars on its
+   next tick, or right away from **Actions → aggregate-supporters → Run
+   workflow**.
+
+```
+node cn-record.mjs wechat 2026-09-05 16:52 66                      # anonymous
+node cn-record.mjs alipay 2026-09-05 20:14 20 --name "小明"         # memo said 小明
+node cn-record.mjs --batch lines.txt                              # one payment per line, "#" comments
+node cn-record.mjs wechat 2026-09-05 16:52 66 --dry-run           # print the entry, write nothing
+```
+
+A batch file is the same four fields per line, with the memo name quoted:
+
+```
+# platform  date        time   yuan  [--name "memo"]
+wechat      2026-09-05  16:51  1
+wechat      2026-09-05  16:52  66
+wechat      2026-09-05  19:10  1     --name "我心态很差"
+```
+
+The entry it writes:
 
 ```json
 {
-  "id": "wechat:2026-09-04-01",
+  "id": "wechat:2026-09-05-1652-66.00",
   "platform": "wechat",
   "month": "2026-09",
-  "amount": 50,
+  "amount": 66,
   "currency": "CNY",
   "goal": "living",
   "name": "",
@@ -160,13 +190,28 @@ figure actually received:
   (patched over the manifest's own snapshot). Converting by hand and writing
   `USD` freezes that day's rate into the ledger forever. If you must record USD,
   divide by the same `cny_per_usd` and say so in a `note`.
-- **`id` must be unique.** It is the only dedupe key. Date plus a counter is
-  enough; a screenshot filename is not, because it changes.
-- **`name` only with consent.** Blank counts toward the goal and names nobody,
-  which is the correct default for a wallet transfer: the payer was never asked.
-  Fill it in once they have said yes, on every entry that is theirs.
-- **Never put a WeChat ID, an Alipay account, a phone number or a transfer memo
-  in this file.** It is world-readable and mirrored by anyone who cloned it.
+- **`id` is `platform:date-HHMM-amount`**, built from the bill line, so the same
+  line recorded twice is refused by `ledger-append.mjs` and two payments of the
+  same amount in the same minute need a hand-edited id. Times are as printed in
+  her bill (Asia/Shanghai); they only feed the id.
+- **`name` is the memo, or nothing.** A memo is the payer asking to be shown
+  under that name. No memo, or a memo that is not a name, is anonymous: the
+  money still counts. `cn-record.mjs` refuses a name that starts with `*`
+  (the bill's masked payer), carries a six-digit run (phone, account) or looks
+  like a handle. `--goal` picks the bar; every rail defaults to `living`.
+- **Never put a WeChat ID, an Alipay account, a phone number or memo text that
+  is not the chosen name in this file.** It is world-readable and mirrored by
+  anyone who cloned it.
+
+给 アたる 的说明（可直接转发）：
+
+1. 收到打赏后不用马上处理。攒一批（比如每周一次）把「微信 收款小账本」或
+   「支付宝 账单」截图发给 Terry 就行，需要的只有：微信/支付宝、日期、时间、
+   金额、以及付款人写的备注（如果有）。
+2. 付款人如果在备注里写了名字，就是他希望在支持者墙上显示这个名字；没写就
+   匿名，金额照样计入目标。
+3. 账单上带星号的付款人姓名（比如 `*饭`）、微信号、手机号都不需要，也不会被
+   记录。
 
 Refresh `fx.cny_per_usd` and `fx.as_of` in `overrides.json` when the rate has
 drifted enough to matter. It applies to the Afdian rail as well.
