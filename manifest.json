@@ -1,6 +1,6 @@
 {
   "schema": 1,
-  "updated_at": "2026-09-05T08:35:08.137Z",
+  "updated_at": "2026-09-05T12:03:54.706Z",
   "cn_alipay_url": "https://qr.alipay.com/fkx14384xioygstaelud788",
   "cn_wechat_url": "wxp://f2f07UkFj13wEYYj9mfCh7kxiNOI96I8GAuxdFp36sC7nv7yQDhHYNTGZ6N0Dye5X3ZM",
   "goals": [
@@ -24,7 +24,7 @@
       "id": "living",
       "kind": "monthly",
       "target_usd": 500,
-      "current_usd": 115,
+      "current_usd": 125.12,
       "fund_url": "https://buy.stripe.com/dRm28saWefAZdXK5KD1Nu07",
       "fund_monthly_url": "https://buy.stripe.com/eVq7sM8O6gF32f24Gz1Nu08"
     }
@@ -176,7 +176,8 @@
       "permanent": false,
       "platform": "kofi",
       "months": {
-        "2026-08": "supporter"
+        "2026-08": "supporter",
+        "2026-09": "supporter"
       }
     },
     {
