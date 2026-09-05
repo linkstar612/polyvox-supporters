@@ -166,7 +166,7 @@ A batch file is the same four fields per line, with the memo name quoted:
 # platform  date        time   yuan  [--name "memo"]
 wechat      2026-09-05  16:51  1
 wechat      2026-09-05  16:52  66
-wechat      2026-09-05  19:10  1     --name "我心态很差"
+wechat      2026-09-05  19:10  1     --name "我心态很差"   # memo; also an existing Ko-fi wall name
 ```
 
 The entry it writes:
@@ -194,11 +194,13 @@ The entry it writes:
   line recorded twice is refused by `ledger-append.mjs` and two payments of the
   same amount in the same minute need a hand-edited id. Times are as printed in
   her bill (Asia/Shanghai); they only feed the id.
-- **`name` is the memo, or nothing.** A memo is the payer asking to be shown
-  under that name. No memo, or a memo that is not a name, is anonymous: the
-  money still counts. `cn-record.mjs` refuses a name that starts with `*`
-  (the bill's masked payer), carries a six-digit run (phone, account) or looks
-  like a handle. `--goal` picks the bar; every rail defaults to `living`.
+- **`name` is the memo, or nothing.** No memo is anonymous: the money still
+  counts. A memo is the payer choosing the name they want shown, whatever it
+  reads like (the 19:10 line's 我心态很差 is a wall name that was already
+  opted in through Ko-fi). `cn-record.mjs` refuses only what cannot be a chosen
+  name: a string starting with `*` (the bill's masked payer), a six-digit run
+  (phone, account) or a handle. `--goal` picks the bar; every rail defaults to
+  `living`.
 - **Never put a WeChat ID, an Alipay account, a phone number or memo text that
   is not the chosen name in this file.** It is world-readable and mirrored by
   anyone who cloned it.
@@ -208,8 +210,8 @@ The entry it writes:
 1. 收到打赏后不用马上处理。攒一批（比如每周一次）把「微信 收款小账本」或
    「支付宝 账单」截图发给 Terry 就行，需要的只有：微信/支付宝、日期、时间、
    金额、以及付款人写的备注（如果有）。
-2. 付款人如果在备注里写了名字，就是他希望在支持者墙上显示这个名字；没写就
-   匿名，金额照样计入目标。
+2. 付款人在备注里写的内容，就是他希望在支持者墙上显示的名字（写什么都算）；
+   没写备注就匿名，金额照样计入目标。
 3. 账单上带星号的付款人姓名（比如 `*饭`）、微信号、手机号都不需要，也不会被
    记录。
 
