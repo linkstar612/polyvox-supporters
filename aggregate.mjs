@@ -32,6 +32,7 @@
 import { readFile, writeFile } from "node:fs/promises";
 
 import { afdianOrders, afdianSponsors, orderRecords, sponsorRecords } from "./afdian.mjs";
+import { ACHIEVEMENTS, buildWall, fold, mergeTesters } from "./cards.mjs";
 import { partitionTesters } from "./wall.mjs";
 
 /// The license mint that holds the tester wall. Its hostname is compiled into
@@ -172,52 +173,6 @@ function toUsd(amount, currency, fx) {
   return typeof rate === "number" && rate > 0 ? amount / rate : amount;
 }
 
-/** Fold every record for one person into the card the wall renders. Identity
- *  is the display name, case-folded: a one-off Ko-fi donation carries no
- *  stable donor id, and merging two people who chose the same public name is
- *  the acceptable end of that trade. */
-function buildWall(records, founders) {
-  const byPerson = new Map();
-  for (const r of records) {
-    if (!r.name) continue; // anonymous — counted in the goal, never named
-    const key = r.name.toLowerCase();
-    const person = byPerson.get(key) ?? {
-      name: r.name,
-      platform: r.platform,
-      months: new Set(),
-      usd: 0,
-      recurring: false,
-      link: "",
-    };
-    person.months.add(r.month);
-    person.usd += r.usd;
-    person.recurring ||= Boolean(r.recurring);
-    person.link ||= r.link ?? "";
-    byPerson.set(key, person);
-  }
-
-  const derived = [...byPerson.values()].map((p) => {
-    const tier = p.recurring || p.usd >= PATRON_USD ? "patron" : "supporter";
-    const months = [...p.months].sort();
-    return {
-      name: p.name,
-      tier,
-      since: months[0],
-      link: p.link,
-      permanent: false,
-      platform: p.platform,
-      // Every month is stamped with the tier the card wears today rather than
-      // whatever was held back then: the strip exists to show duration, and
-      // one that changed colour part-way would read as a rank history.
-      months: Object.fromEntries(months.map((m) => [m, tier])),
-    };
-  });
-
-  // Founders are hand-kept and never derived — a payment cannot grant the
-  // tier, and lapsing cannot remove it (design §2, `permanent`).
-  return [...founders, ...derived];
-}
-
 // --- main -------------------------------------------------------------------
 
 const manifest = JSON.parse(await readFile("manifest.json", "utf8"));
@@ -292,8 +247,6 @@ for (const goal of manifest.goals) {
   goal.current_usd = Math.round((earned + manual) * 100) / 100;
 }
 
-manifest.supporters = buildWall([...records, ...afdianWall], overrides.founders ?? []);
-
 // --- R-DON.6: the opt-in pre-alpha tester roster ------------------------------
 //
 // Read from the mint rather than derived here, because the mint is the only
@@ -303,6 +256,9 @@ manifest.supporters = buildWall([...records, ...afdianWall], overrides.founders 
 // Never fatal. A missing token or an unreachable Worker leaves `manifest.testers`
 // exactly as the last good run wrote it: this same script publishes the donation
 // totals, and failing the run over a badge would cost a donation its record.
+// Read before the wall is built, because the era the mint proved is what earns
+// the pre-alpha trophy on a supporter card.
+let mintTesters = Array.isArray(manifest.testers) ? manifest.testers : [];
 const mintToken = process.env.MINT_ADMIN_TOKEN;
 if (!mintToken) {
   console.warn("MINT_ADMIN_TOKEN not set. Tester wall skipped; manifest.testers left unchanged.");
@@ -319,7 +275,7 @@ if (!mintToken) {
       approved: overrides.wall_approved ?? [],
       excluded: overrides.wall_exclude ?? [],
     });
-    manifest.testers = published;
+    mintTesters = published;
 
     // Written whether or not anything is waiting, because an empty file is the
     // only way "nobody is pending" can be told apart from "the pull failed and
@@ -350,6 +306,33 @@ if (!mintToken) {
     console.error(`Tester wall not refreshed (${e.message}); manifest.testers left unchanged.`);
   }
 }
+
+// --- R-OCS.10: the wall, its levels and its trophies --------------------------
+//
+// The trophy catalog ships in the manifest so the app renders a new one without
+// a release. Hand-kept `badges.prealpha` names the testers who were here before
+// the mint could prove it; `card_styles` is the fallback for a card style
+// picked before the mint carried one.
+const prealpha = new Set((overrides.badges?.prealpha ?? []).map((n) => fold(n)));
+const eras = new Map(mintTesters.map((t) => [fold(t?.name), String(t?.badge ?? "")]));
+
+manifest.achievements = ACHIEVEMENTS;
+manifest.supporters = buildWall([...records, ...afdianWall], overrides.founders ?? [], {
+  patronUsd: PATRON_USD,
+  prealpha,
+  eras,
+  cardStyles: overrides.card_styles ?? {},
+});
+
+// A hand-listed tester with no donation has no supporter card to wear the
+// trophy on, so they get a tester row instead. Written only when there is
+// something to write, so a mint outage still leaves the last good roster alone.
+const testers = mergeTesters({
+  testers: mintTesters,
+  prealpha: overrides.badges?.prealpha ?? [],
+  onWall: manifest.supporters.map((s) => s.name),
+});
+if (testers.length || Array.isArray(manifest.testers)) manifest.testers = testers;
 
 manifest.updated_at = new Date().toISOString();
 

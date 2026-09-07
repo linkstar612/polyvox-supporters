@@ -76,10 +76,10 @@
       "amount": 1,
       "currency": "CNY",
       "goal": "living",
-      "name": "",
+      "name": "灯灯",
       "link": "",
       "recurring": false,
-      "note": "Personal WeChat collection code (R-DON.7), bill line from アたる 2026-09-05. No memo, so anonymous."
+      "note": "Personal WeChat collection code (R-DON.7), bill line from アたる 2026-09-05. Payer told the owner directly which line was theirs and asked to be named."
     },
     {
       "id": "wechat:2026-09-05-1652-66.00",
@@ -88,10 +88,10 @@
       "amount": 66,
       "currency": "CNY",
       "goal": "living",
-      "name": "",
+      "name": "EMO艺术家",
       "link": "",
       "recurring": false,
-      "note": "Personal WeChat collection code (R-DON.7), bill line from アたる 2026-09-05. No memo, so anonymous."
+      "note": "Personal WeChat collection code (R-DON.7), bill line from アたる 2026-09-05. Payer told the owner directly which line was theirs and asked to be named."
     },
     {
       "id": "wechat:2026-09-05-1910-1.00",
