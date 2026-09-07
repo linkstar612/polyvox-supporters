@@ -1,6 +1,6 @@
 {
   "schema": 1,
-  "updated_at": "2026-09-07T12:27:22.272Z",
+  "updated_at": "2026-09-07T14:44:49.593Z",
   "cn_alipay_url": "https://qr.alipay.com/fkx14384xioygstaelud788",
   "cn_wechat_url": "wxp://f2f0A9cBJGuK35Q_ORclkPEoLvRnarv0-O2anGVzEJLjtSwbjkkQTDjez35EAkqVZ_qV",
   "goals": [
@@ -69,19 +69,20 @@
   ],
   "supporters": [
     {
-      "name": "The Polyvox Team",
-      "tier": "founder",
-      "since": "2026-01",
-      "link": "",
-      "permanent": true
-    },
-    {
       "name": "dragon_yars",
       "tier": "supporter",
       "since": "2026-08",
       "link": "",
       "permanent": false,
       "platform": "stripe",
+      "rails": [
+        "stripe"
+      ],
+      "level": 1,
+      "badges": [
+        "prealpha",
+        "first_light"
+      ],
       "months": {
         "2026-08": "supporter"
       }
@@ -93,6 +94,14 @@
       "link": "",
       "permanent": false,
       "platform": "stripe",
+      "rails": [
+        "stripe"
+      ],
+      "level": 1,
+      "badges": [
+        "prealpha",
+        "first_light"
+      ],
       "months": {
         "2026-07": "patron"
       }
@@ -104,6 +113,14 @@
       "link": "",
       "permanent": false,
       "platform": "stripe",
+      "rails": [
+        "stripe"
+      ],
+      "level": 1,
+      "badges": [
+        "prealpha",
+        "first_light"
+      ],
       "months": {
         "2026-07": "supporter"
       }
@@ -115,6 +132,13 @@
       "link": "",
       "permanent": false,
       "platform": "kofi",
+      "rails": [
+        "kofi"
+      ],
+      "level": 1,
+      "badges": [
+        "first_light"
+      ],
       "months": {
         "2026-08": "supporter"
       }
@@ -126,6 +150,16 @@
       "link": "",
       "permanent": false,
       "platform": "kofi",
+      "rails": [
+        "kofi",
+        "wechat"
+      ],
+      "level": 2,
+      "badges": [
+        "prealpha",
+        "first_light",
+        "two_rails"
+      ],
       "months": {
         "2026-08": "supporter",
         "2026-09": "supporter"
@@ -138,6 +172,14 @@
       "link": "",
       "permanent": false,
       "platform": "kofi",
+      "rails": [
+        "kofi"
+      ],
+      "level": 1,
+      "badges": [
+        "prealpha",
+        "first_light"
+      ],
       "months": {
         "2026-08": "supporter"
       }
@@ -149,6 +191,51 @@
       "link": "",
       "permanent": false,
       "platform": "kofi",
+      "rails": [
+        "kofi"
+      ],
+      "level": 1,
+      "badges": [
+        "first_light"
+      ],
+      "months": {
+        "2026-09": "supporter"
+      }
+    },
+    {
+      "name": "灯灯",
+      "tier": "supporter",
+      "since": "2026-09",
+      "link": "",
+      "permanent": false,
+      "platform": "wechat",
+      "rails": [
+        "wechat"
+      ],
+      "level": 1,
+      "badges": [
+        "prealpha",
+        "first_light"
+      ],
+      "months": {
+        "2026-09": "supporter"
+      }
+    },
+    {
+      "name": "EMO艺术家",
+      "tier": "supporter",
+      "since": "2026-09",
+      "link": "",
+      "permanent": false,
+      "platform": "wechat",
+      "rails": [
+        "wechat"
+      ],
+      "level": 1,
+      "badges": [
+        "prealpha",
+        "first_light"
+      ],
       "months": {
         "2026-09": "supporter"
       }
@@ -188,5 +275,43 @@
       "TRY": 47.185,
       "ZAR": 16.4445
     }
-  }
+  },
+  "achievements": [
+    {
+      "id": "founder",
+      "label": "Founder",
+      "description": "Here before there was anything to support.",
+      "color": "#f2c14e"
+    },
+    {
+      "id": "prealpha",
+      "label": "Pre-alpha tester",
+      "description": "Ran Polyvox before the first alpha build.",
+      "color": "#a78bfa"
+    },
+    {
+      "id": "alpha",
+      "label": "Alpha tester",
+      "description": "Ran Polyvox during the alpha.",
+      "color": "#38bdf8"
+    },
+    {
+      "id": "first_light",
+      "label": "First light",
+      "description": "Sent a first donation.",
+      "color": "#fb923c"
+    },
+    {
+      "id": "two_rails",
+      "label": "Two rails",
+      "description": "Gave from two different places.",
+      "color": "#34d399"
+    },
+    {
+      "id": "three_months",
+      "label": "Three months",
+      "description": "Gave in three different months.",
+      "color": "#f472b6"
+    }
+  ]
 }
