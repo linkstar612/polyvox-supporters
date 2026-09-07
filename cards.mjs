@@ -18,6 +18,8 @@
 // The catalog itself ships in the manifest rather than in the app, so a new
 // trophy needs no app release.
 
+import { createHash } from "node:crypto";
+
 /// Every trophy the wall can show. `color` is the trophy's own, not the card's.
 export const ACHIEVEMENTS = [
   {
@@ -199,6 +201,52 @@ export function buildWall(records, founders, options = {}) {
   });
 
   return [...permanent, ...derived];
+}
+
+// --- R-OCS.10: tying a donation back to the app that made it -----------------
+//
+// The app derives a short code from the license on disk and shows it. On
+// Stripe it rides the link as `client_reference_id`; on every other rail the
+// donor types it into the payment note. Here it becomes a SHA-256 key, and the
+// app recognizes its own row by hashing its own code.
+//
+// Only the hash is published, so this file still names nobody: a reader who
+// does not already hold the code learns nothing from the key, and a machine
+// that never donated finds no row.
+
+/// `PV-` plus six RFC 4648 base32 characters. Matched anywhere in the text
+/// because a payment note is a sentence, not a field.
+const CODE_RE = /PV-[A-Z2-7]{6}/;
+
+export const hashCode = (code) => createHash("sha256").update(code).digest("hex");
+
+/// The code a record carries, or "". Upper-cased first: base32 has no
+/// lowercase, and somebody typing it into a phone keyboard will send one.
+export function codeFrom(record) {
+  const haystack = [record?.client_reference_id, record?.note, record?.message]
+    .filter(Boolean)
+    .join(" ")
+    .toUpperCase();
+  return haystack.match(CODE_RE)?.[0] ?? "";
+}
+
+/// Which trophies each donation code has unlocked.
+///
+/// A donation always earns `first_light` by itself, which is the point. Beyond
+/// that the code inherits whatever its own card wears, so somebody who gave on
+/// two rails sees `two_rails` in the app without having to find their card.
+export function buildUnlocks(records, wall = []) {
+  const byName = new Map((wall ?? []).map((s) => [fold(s?.name), s]));
+  const out = {};
+  for (const r of records ?? []) {
+    const code = codeFrom(r);
+    if (!code) continue;
+    const key = hashCode(code);
+    const ids = new Set(out[key] ?? ["first_light"]);
+    for (const b of byName.get(fold(r.name))?.badges ?? []) ids.add(b);
+    out[key] = [...ids].sort((a, b) => (BADGE_RANK.get(a) ?? 99) - (BADGE_RANK.get(b) ?? 99));
+  }
+  return out;
 }
 
 /// A hand-listed pre-alpha tester who never donated still belongs on the wall.

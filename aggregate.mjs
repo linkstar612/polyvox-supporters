@@ -32,7 +32,7 @@
 import { readFile, writeFile } from "node:fs/promises";
 
 import { afdianOrders, afdianSponsors, orderRecords, sponsorRecords } from "./afdian.mjs";
-import { ACHIEVEMENTS, buildWall, fold, mergeTesters } from "./cards.mjs";
+import { ACHIEVEMENTS, buildUnlocks, buildWall, fold, mergeTesters } from "./cards.mjs";
 import { partitionTesters } from "./wall.mjs";
 
 /// The license mint that holds the tester wall. Its hostname is compiled into
@@ -152,6 +152,9 @@ async function stripeEntries(key, skipPi) {
         name: (named?.text?.value ?? "").trim(),
         link: "",
         recurring: s.mode === "subscription",
+        // R-OCS.10: the donation code the app put on the link. Stripe hands it
+        // back verbatim, so this rail needs nothing typed by the donor.
+        client_reference_id: s.client_reference_id ?? "",
       });
     }
     startingAfter = page.has_more ? page.data.at(-1).id : null;
@@ -323,6 +326,11 @@ manifest.supporters = buildWall([...records, ...afdianWall], overrides.founders 
   eras,
   cardStyles: overrides.card_styles ?? {},
 });
+
+// A donation that carried the app's code unlocks its trophies for that
+// install. Only the hash of the code is published: the file names nobody, and
+// the app recognizes its own row by hashing the code it already holds.
+manifest.unlocks = buildUnlocks(records, manifest.supporters);
 
 // A hand-listed tester with no donation has no supporter card to wear the
 // trophy on, so they get a tester row instead. Written only when there is

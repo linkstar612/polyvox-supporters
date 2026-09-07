@@ -13,7 +13,10 @@ import {
   ACHIEVEMENTS,
   CARD_STYLES,
   badgesFor,
+  buildUnlocks,
   buildWall,
+  codeFrom,
+  hashCode,
   levelFor,
   mergeTesters,
 } from "../cards.mjs";
@@ -160,6 +163,45 @@ test("a hand-listed tester with no donation is published as a tester", () => {
     { name: "灯灯", badge: "prealpha", since: "" },
     { name: "Zoe", badge: "prealpha", since: "2026-07-04" },
   ]);
+});
+
+test("a donation code is found in a note, a message or a Stripe reference", () => {
+  assert.equal(codeFrom({ note: "thanks! PV-A2B3C4 here" }), "PV-A2B3C4");
+  assert.equal(codeFrom({ message: "pv-a2b3c4" }), "PV-A2B3C4");
+  assert.equal(codeFrom({ client_reference_id: "PV-ZZZZ77" }), "PV-ZZZZ77");
+  assert.equal(codeFrom({ note: "no code here" }), "");
+  assert.equal(codeFrom({}), "");
+  // Base32 has no 0, 1 or 8, so a lookalike is not a code.
+  assert.equal(codeFrom({ note: "PV-A0B1C8" }), "");
+});
+
+test("a coded donation unlocks its own card's trophies, keyed by hash", () => {
+  const wall = buildWall(
+    [
+      rec({ name: "Wen", platform: "kofi", month: "2026-08", note: "PV-A2B3C4" }),
+      rec({ name: "Wen", platform: "wechat", month: "2026-09" }),
+    ],
+    [],
+  );
+  const unlocks = buildUnlocks(
+    [rec({ name: "Wen", platform: "kofi", month: "2026-08", note: "PV-A2B3C4" })],
+    wall,
+  );
+  const key = hashCode("PV-A2B3C4");
+  assert.deepEqual(Object.keys(unlocks), [key]);
+  assert.deepEqual(unlocks[key], ["first_light", "two_rails"]);
+  // The published key is a one-way digest, never the code itself.
+  assert.equal(key.length, 64);
+  assert.equal(JSON.stringify(unlocks).includes("PV-"), false);
+});
+
+test("an anonymous coded donation still unlocks the first trophy", () => {
+  const unlocks = buildUnlocks([rec({ note: "PV-A2B3C4" })], []);
+  assert.deepEqual(unlocks[hashCode("PV-A2B3C4")], ["first_light"]);
+});
+
+test("a donation with no code publishes nothing", () => {
+  assert.deepEqual(buildUnlocks([rec({ name: "Wen" })], []), {});
 });
 
 test("the catalog is complete and every entry is renderable", () => {
