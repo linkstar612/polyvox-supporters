@@ -71,8 +71,11 @@ jobs:
           if (daysLeft !== null && daysLeft < WARN_DAYS) {
             problems.push(
               `GH_TOKEN expires in ${daysLeft} days (${expires}). Rotate it BEFORE then:\n` +
-              "  1. github.com/settings/personal-access-tokens — regenerate, or make a new\n" +
-              "     fine-grained token: only polyvox-supporters, Contents: Read and write.\n" +
+              "  1. github.com/settings/personal-access-tokens: regenerate, or make a\n" +
+              "     new fine-grained token, only polyvox-supporters, Contents: Read and\n" +
+              "     write. Give it a 1-YEAR expiry. A ~30-day token clears this 21-day\n" +
+              "     window for one weekly run and is red for every run after it, which\n" +
+              "     is how four of the first seven runs went red on this one warning.\n" +
               "  2. cd worker && npx wrangler secret put GH_TOKEN",
             );
           }
