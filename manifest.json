@@ -1,6 +1,6 @@
 {
   "schema": 1,
-  "updated_at": "2026-09-08T13:59:43.598Z",
+  "updated_at": "2026-09-08T15:19:01.020Z",
   "cn_alipay_url": "https://qr.alipay.com/fkx14384xioygstaelud788",
   "cn_wechat_url": "wxp://f2f0A9cBJGuK35Q_ORclkPEoLvRnarv0-O2anGVzEJLjtSwbjkkQTDjez35EAkqVZ_qV",
   "goals": [
@@ -312,36 +312,6 @@
       "label": "Three months",
       "description": "Gave in three different months.",
       "color": "#f472b6"
-    },
-    {
-      "id": "booth_signal",
-      "label": "Signal",
-      "description": "Supported at the Signal tier on BOOTH.",
-      "color": "#60a5fa"
-    },
-    {
-      "id": "booth_echo",
-      "label": "Echo",
-      "description": "Supported at the Echo tier on BOOTH.",
-      "color": "#22d3ee"
-    },
-    {
-      "id": "booth_relay",
-      "label": "Relay",
-      "description": "Supported at the Relay tier on BOOTH.",
-      "color": "#a3e635"
-    },
-    {
-      "id": "booth_interpreter",
-      "label": "Interpreter",
-      "description": "Supported at the Interpreter tier on BOOTH.",
-      "color": "#fb7185"
-    },
-    {
-      "id": "booth_fluent",
-      "label": "Fluent",
-      "description": "Supported at the Fluent tier on BOOTH.",
-      "color": "#e879f9"
     }
   ],
   "unlocks": {}
