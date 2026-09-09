@@ -1,8 +1,6 @@
 {
   "_comment": "Hand-kept inputs to aggregate.mjs. `manual_usd` is a per-goal USD nudge for money no rail reports - prefer a ledger.json entry, which also earns the donor a card; use this only for lump sums with no donor attached. `founders` is prepended to the wall verbatim: aggregate.mjs REBUILDS manifest.supporters on every run, so a name that is not here and not in the ledger will not survive the next commit. `fx.cny_per_usd` is patched over manifest.fx.rates.CNY before any conversion runs and is what the Afdian rail and hand-recorded WeChat/Alipay entries are converted with; refresh it when it drifts and move `as_of` with it. `afdian_goal` names the goal Afdian orders fund. `wall_approved` is the opt-in tester wall (R-DON.6): a tester is published ONLY once their `key` from wall-pending.json is listed here, so opting in is a request and this file is the decision. `wall_exclude` strikes a name already approved, matched case-folded against the key or the display name. `badges.prealpha` is the hand-kept pre-alpha tester roster: every name on it wears the pre-alpha trophy on their supporter card, and a name with no donation on any rail is published as a tester row instead. `card_styles` maps a display name to one of plain, friend_gold, visitor_cyan, pulse, aurora and is only the fallback - a style the supporter picked through the wall opt-in wins.",
   "manual_usd": {
-    "dev_costs": 0,
-    "expedited": 0,
     "living": 0
   },
   "fx": {
