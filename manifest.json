@@ -1,6 +1,6 @@
 {
   "schema": 1,
-  "updated_at": "2026-09-13T06:06:50.866Z",
+  "updated_at": "2026-09-13T11:47:59.522Z",
   "cn_alipay_url": "https://qr.alipay.com/fkx14384xioygstaelud788",
   "cn_wechat_url": "wxp://f2f0A9cBJGuK35Q_ORclkPEoLvRnarv0-O2anGVzEJLjtSwbjkkQTDjez35EAkqVZ_qV",
   "goals": [
@@ -8,7 +8,7 @@
       "id": "living",
       "kind": "monthly",
       "target_usd": 500,
-      "current_usd": 130.12,
+      "current_usd": 155.12,
       "fund_url": "https://buy.stripe.com/14A7sM9Sa3Shf1O2yr1Nu00",
       "fund_monthly_url": "https://buy.stripe.com/aFa14o7K260pcTGb4X1Nu0e"
     }
@@ -101,6 +101,24 @@
     }
   ],
   "supporters": [
+    {
+      "name": "恐龙连续剧",
+      "tier": "patron",
+      "since": "2026-09",
+      "link": "",
+      "permanent": false,
+      "platform": "stripe",
+      "rails": [
+        "stripe"
+      ],
+      "level": 1,
+      "badges": [
+        "first_light"
+      ],
+      "months": {
+        "2026-09": "patron"
+      }
+    },
     {
       "name": "Yasha",
       "tier": "supporter",
@@ -366,6 +384,9 @@
     }
   ],
   "unlocks": {
+    "90ffaeb4df2da962502ce266a47578fd8065fc9ab70da1f56b052f688cdb311a": [
+      "first_light"
+    ],
     "225685b2c976d787fe11310908ecb71d61bbe41ac5a38adb1d9b79391724925e": [
       "first_light"
     ]
