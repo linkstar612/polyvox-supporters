@@ -12,6 +12,7 @@ import { test } from "node:test";
 import {
   ACHIEVEMENTS,
   CARD_STYLES,
+  applyAliases,
   badgesFor,
   buildUnlocks,
   buildWall,
@@ -202,6 +203,38 @@ test("an anonymous coded donation still unlocks the first trophy", () => {
 
 test("a donation with no code publishes nothing", () => {
   assert.deepEqual(buildUnlocks([rec({ name: "Wen" })], []), {});
+});
+
+test("an alias folds a live-rail name onto the card it belongs to", () => {
+  const raw = [
+    rec({
+      name: "Name on Stripe",
+      platform: "stripe",
+      month: "2026-09",
+      usd: 25,
+      client_reference_id: "PV-A2B3C4",
+    }),
+    rec({ name: "Wen", platform: "wechat", month: "2026-09", usd: 0.15 }),
+  ];
+  const records = applyAliases(raw, { "name on stripe": "Wen" });
+  // The input is untouched and the canonical spelling wins.
+  assert.equal(raw[0].name, "Name on Stripe");
+  assert.deepEqual(
+    records.map((r) => r.name),
+    ["Wen", "Wen"],
+  );
+  const wall = buildWall(records, [], { prealpha: new Set(["wen"]) });
+  assert.equal(wall.length, 1);
+  assert.deepEqual(wall[0].rails, ["stripe", "wechat"]);
+  // The code rode the aliased record, so the hash wears the merged card's trophies.
+  const unlocks = buildUnlocks(records, wall);
+  assert.deepEqual(unlocks[hashCode("PV-A2B3C4")], ["prealpha", "first_light", "two_rails"]);
+});
+
+test("an empty alias map returns the records unchanged", () => {
+  const raw = [rec({ name: "Wen" })];
+  assert.deepEqual(applyAliases(raw, {}), raw);
+  assert.deepEqual(applyAliases(raw), raw);
 });
 
 test("the catalog is complete and every entry is renderable", () => {

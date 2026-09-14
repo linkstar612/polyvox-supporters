@@ -129,6 +129,20 @@ To name them once they have said yes, set `name` on **every** entry that is
 theirs (that is what groups a person across months) and let the Action rebuild.
 Removing a name is the same edit in reverse.
 
+A name that arrived on a live rail (a Stripe display name, an Afdian sponsor
+name) is not in `ledger.json` and cannot be edited there: the poller pulls it
+fresh on every run. Map it in `overrides.json` → `aliases` instead, keyed by
+the name as the rail delivered it, valued by the name the card wears:
+
+```json
+"aliases": { "Name typed on Stripe": "Name on the wall" }
+```
+
+Both sides are case-folded. The aliased records fold onto the existing card
+(one card, both rails, `two_rails` earned), and a donation code they carried
+unlocks that card's trophies for the install that made it. Removing the
+alias splits the cards again on the next run.
+
 ## Recording a WeChat or Alipay payment
 
 **Nothing polls these, and nothing ever will.** アたる's WeChat and Alipay

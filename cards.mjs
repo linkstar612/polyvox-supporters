@@ -70,6 +70,23 @@ export const CARD_STYLES = ["plain", "friend_gold", "visitor_cyan", "pulse", "au
 
 export const fold = (s) => String(s ?? "").trim().toLowerCase();
 
+/** One person, one card, even when a live rail spelled them differently.
+ *  `aliases` maps a display name as a rail delivered it to the name the card
+ *  wears (`overrides.json` -> `aliases`); both sides are case-folded. A ledger
+ *  entry can be renamed in place, but Stripe and Afdian records are pulled
+ *  fresh on every run, so for them this is the only place a rename can happen.
+ *  Returns new records; the input is never mutated. */
+export function applyAliases(records, aliases = {}) {
+  const map = new Map(
+    Object.entries(aliases ?? {}).map(([from, to]) => [fold(from), String(to ?? "").trim()]),
+  );
+  if (!map.size) return records ?? [];
+  return (records ?? []).map((r) => {
+    const to = map.get(fold(r?.name));
+    return to ? { ...r, name: to } : r;
+  });
+}
+
 /// Months supported, mapped to the four card colors.
 ///
 /// One month is a real level, not a zero: somebody who gave once is on the

@@ -32,7 +32,14 @@
 import { readFile, writeFile } from "node:fs/promises";
 
 import { afdianOrders, afdianSponsors, orderRecords, sponsorRecords } from "./afdian.mjs";
-import { ACHIEVEMENTS, buildUnlocks, buildWall, fold, mergeTesters } from "./cards.mjs";
+import {
+  ACHIEVEMENTS,
+  applyAliases,
+  buildUnlocks,
+  buildWall,
+  fold,
+  mergeTesters,
+} from "./cards.mjs";
 import { partitionTesters } from "./wall.mjs";
 
 /// The license mint that holds the tester wall. Its hostname is compiled into
@@ -232,15 +239,21 @@ const skipPi = new Set(
 );
 
 // Both rails now speak amount+currency; the USD conversion happens once, here.
-const records = [
-  ...(key ? await stripeEntries(key, skipPi) : []),
-  ...ledger.entries,
-  ...afdianEntries,
-].map((e) => ({
-  ...e,
-  usd: toUsd(Number(e.amount ?? 0), e.currency, fx),
-  goal: e.goal ?? DEFAULT_GOAL,
-}));
+const records = applyAliases(
+  [
+    ...(key ? await stripeEntries(key, skipPi) : []),
+    ...ledger.entries,
+    ...afdianEntries,
+  ].map((e) => ({
+    ...e,
+    usd: toUsd(Number(e.amount ?? 0), e.currency, fx),
+    goal: e.goal ?? DEFAULT_GOAL,
+  })),
+  // overrides.json -> aliases: a name a live rail delivered, folded onto the
+  // card it belongs to. Applied at the source so the wall and the unlocks
+  // agree on who a coded donation was from.
+  overrides.aliases ?? {},
+);
 
 for (const goal of manifest.goals) {
   const earned = records
@@ -320,7 +333,10 @@ const prealpha = new Set((overrides.badges?.prealpha ?? []).map((n) => fold(n)))
 const eras = new Map(mintTesters.map((t) => [fold(t?.name), String(t?.badge ?? "")]));
 
 manifest.achievements = ACHIEVEMENTS;
-manifest.supporters = buildWall([...records, ...afdianWall], overrides.founders ?? [], {
+manifest.supporters = buildWall(
+  [...records, ...applyAliases(afdianWall, overrides.aliases ?? {})],
+  overrides.founders ?? [],
+  {
   patronUsd: PATRON_USD,
   prealpha,
   eras,
