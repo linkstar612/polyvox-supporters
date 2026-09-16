@@ -32,6 +32,7 @@
 import { readFile, writeFile } from "node:fs/promises";
 
 import { afdianOrders, afdianSponsors, orderRecords, sponsorRecords } from "./afdian.mjs";
+import { donateHealthy, publishCustomAmount } from "./custom-amount.mjs";
 import {
   ACHIEVEMENTS,
   applyAliases,
@@ -357,6 +358,18 @@ const testers = mergeTesters({
   onWall: manifest.supporters.map((s) => s.name),
 });
 if (testers.length || Array.isArray(manifest.testers)) manifest.testers = testers;
+
+// The custom-amount minter (worker/donate) is published on the Stripe link
+// only while it answers /health: the app draws its amount field off
+// `custom_url`, so a Worker with no key, or a revoked one, withdraws the
+// field instead of sending a donor to an error page (custom-amount.mjs).
+const customAmountOn = await donateHealthy();
+if (!customAmountOn) {
+  console.warn(
+    "worker/donate reports no Stripe key; custom_url left out of the manifest.",
+  );
+}
+publishCustomAmount(manifest.links, { healthy: customAmountOn });
 
 manifest.updated_at = new Date().toISOString();
 

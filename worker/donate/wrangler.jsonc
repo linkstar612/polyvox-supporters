@@ -1,0 +1,30 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+
+  // The name is the hostname, and the hostname is what aggregate.mjs probes
+  // and publishes into the manifest as `custom_url` (DONATE_URL in
+  // custom-amount.mjs). Renaming this Worker means changing that constant in
+  // the same commit, or the app's amount field points at nothing.
+  "name": "polyvox-donate",
+  "main": "donate.js",
+  "compatibility_date": "2026-07-01",
+
+  // A Stripe refusal is a 502 to the donor and one line here. Without logs it
+  // looks like a donor who changed their mind.
+  "observability": { "enabled": true },
+
+  // Ten mints a minute per address (period must be 10 or 60). A donor needs
+  // one; a script that found the URL would otherwise fill the Stripe dashboard
+  // with open sessions. Needs Wrangler 4.36 or newer.
+  "ratelimits": [
+    {
+      "name": "DONATE_RL",
+      "namespace_id": "1001",
+      "simple": { "limit": 10, "period": 60 }
+    }
+  ]
+
+  // STRIPE_RESTRICTED_KEY is set with `wrangler secret put`, never declared
+  // here: a plain var of the same name would overwrite the secret on the next
+  // deploy.
+}

@@ -25,6 +25,8 @@ the software-update channel.
 | `wall.mjs` | Splits the opted-in roster into what is approved and what is waiting. |
 | `wall-pending.json` | Opted-in testers waiting for the owner. Rebuilt every run; a queue, never a roster. |
 | `worker/kofi-doorman.js` | Cloudflare Worker that turns a Ko-fi webhook into a `repository_dispatch`. |
+| `worker/donate/donate.js` | Cloudflare Worker that mints a one-time Stripe Checkout Session for the amount the app asked for and redirects to it. The custom-amount rail; no cap below Stripe's own. |
+| `custom-amount.mjs` | Publishes the minter's URL on the manifest's Stripe link (`custom_url`, `custom_min_usd`) only while `worker/donate` answers `/health` with 200. |
 | `.github/workflows/aggregate.yml` | Runs the above on dispatch, on cron (~2×/hour), and on demand. |
 
 ## How a donation reaches the app
@@ -70,6 +72,17 @@ That gap is the only reason the Worker exists.
    key `displayname`, labelled something like *"Name for the supporters wall
    (leave blank to stay anonymous)"*. Blank is anonymous; the money still counts. Stripe derives the field key from the label and permits alphanumerics only, so a label of "Display name" yields the key displayname, with no underscore; it must match NAME_FIELD in aggregate.mjs.
 6. Run it once: **Actions → aggregate-supporters → Run workflow**.
+7. **Switch on custom amounts** (the app's "Custom amount" field): deploy
+   [`worker/donate`](./worker/donate/donate.js) and give it a second restricted
+   key, this one with **write** on *Checkout Sessions* and nothing else. From
+   `worker/donate`: `npx wrangler deploy`, then
+   `npx wrangler secret put STRIPE_RESTRICTED_KEY`. That is the whole switch:
+   the next Action run sees `/health` answer 200 and publishes `custom_url` on
+   the Stripe link, and the app shows the field on its next manifest poll.
+   Until then the manifest carries no `custom_url` and the app shows no field.
+   Sessions the minter creates already carry the optional `displayname` field
+   and the app's `client_reference_id`, so `aggregate.mjs` counts them like any
+   Payment Link payment.
 
 Until the Stripe secret exists the Action still runs — it just skips the Stripe
 rail and applies the ledger and overrides. Nothing breaks.
