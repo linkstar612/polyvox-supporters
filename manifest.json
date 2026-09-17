@@ -1,6 +1,6 @@
 {
   "schema": 1,
-  "updated_at": "2026-09-17T19:15:46.330Z",
+  "updated_at": "2026-09-17T22:10:51.572Z",
   "cn_alipay_url": "https://qr.alipay.com/fkx14384xioygstaelud788",
   "cn_wechat_url": "wxp://f2f0A9cBJGuK35Q_ORclkPEoLvRnarv0-O2anGVzEJLjtSwbjkkQTDjez35EAkqVZ_qV",
   "goals": [
@@ -55,7 +55,9 @@
           "url": "https://buy.stripe.com/6oUfZie8qcoN3j6a0T1Nu04",
           "monthly_url": "https://buy.stripe.com/aFa5kEfcu88x4na0qj1Nu0h"
         }
-      ]
+      ],
+      "custom_url": "https://polyvox-donate.terry61295.workers.dev",
+      "custom_min_usd": 1
     },
     {
       "platform": "kofi",
