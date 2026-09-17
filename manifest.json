@@ -1,6 +1,6 @@
 {
   "schema": 1,
-  "updated_at": "2026-09-17T05:23:00.086Z",
+  "updated_at": "2026-09-17T10:25:30.065Z",
   "cn_alipay_url": "https://qr.alipay.com/fkx14384xioygstaelud788",
   "cn_wechat_url": "wxp://f2f0A9cBJGuK35Q_ORclkPEoLvRnarv0-O2anGVzEJLjtSwbjkkQTDjez35EAkqVZ_qV",
   "goals": [
@@ -8,7 +8,7 @@
       "id": "living",
       "kind": "monthly",
       "target_usd": 500,
-      "current_usd": 155.12,
+      "current_usd": 185.12,
       "fund_url": "https://buy.stripe.com/14A7sM9Sa3Shf1O2yr1Nu00",
       "fund_monthly_url": "https://buy.stripe.com/aFa14o7K260pcTGb4X1Nu0e"
     }
@@ -101,6 +101,24 @@
     }
   ],
   "supporters": [
+    {
+      "name": "ATaruzzz",
+      "tier": "patron",
+      "since": "2026-09",
+      "link": "",
+      "permanent": false,
+      "platform": "stripe",
+      "rails": [
+        "stripe"
+      ],
+      "level": 1,
+      "badges": [
+        "first_light"
+      ],
+      "months": {
+        "2026-09": "patron"
+      }
+    },
     {
       "name": "灯灯",
       "tier": "patron",
@@ -368,6 +386,9 @@
     }
   ],
   "unlocks": {
+    "820c2133ffe0582ab57faba6ea8dcb00ce12b30011cbdcdead3c75c266aaac2f": [
+      "first_light"
+    ],
     "90ffaeb4df2da962502ce266a47578fd8065fc9ab70da1f56b052f688cdb311a": [
       "prealpha",
       "first_light",
