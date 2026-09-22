@@ -1,6 +1,6 @@
 {
   "schema": 1,
-  "updated_at": "2026-09-22T16:55:56.312Z",
+  "updated_at": "2026-09-22T20:11:11.547Z",
   "cn_alipay_url": "https://qr.alipay.com/fkx14384xioygstaelud788",
   "cn_wechat_url": "wxp://f2f0A9cBJGuK35Q_ORclkPEoLvRnarv0-O2anGVzEJLjtSwbjkkQTDjez35EAkqVZ_qV",
   "goals": [
@@ -8,7 +8,7 @@
       "id": "living",
       "kind": "monthly",
       "target_usd": 500,
-      "current_usd": 185.12,
+      "current_usd": 190.12,
       "fund_url": "https://buy.stripe.com/14A7sM9Sa3Shf1O2yr1Nu00",
       "fund_monthly_url": "https://buy.stripe.com/aFa14o7K260pcTGb4X1Nu0e"
     }
@@ -103,6 +103,24 @@
     }
   ],
   "supporters": [
+    {
+      "name": "Wardowardo",
+      "tier": "supporter",
+      "since": "2026-09",
+      "link": "",
+      "permanent": false,
+      "platform": "stripe",
+      "rails": [
+        "stripe"
+      ],
+      "level": 1,
+      "badges": [
+        "first_light"
+      ],
+      "months": {
+        "2026-09": "supporter"
+      }
+    },
     {
       "name": "ATaruzzz",
       "tier": "patron",
@@ -388,6 +406,9 @@
     }
   ],
   "unlocks": {
+    "31ce220eefb7e6e2c5c97057ddc624b94c334639d486e8be79fcf7a1ed534f46": [
+      "first_light"
+    ],
     "820c2133ffe0582ab57faba6ea8dcb00ce12b30011cbdcdead3c75c266aaac2f": [
       "first_light"
     ],
