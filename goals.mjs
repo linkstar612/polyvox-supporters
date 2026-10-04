@@ -5,9 +5,9 @@
 //
 // A goal whose `kind` is "monthly" counts only the records stamped with the
 // current month, so its bar starts over at 00:00 UTC on the 1st. Any other kind
-// counts every record. Every rail stamps `month` in UTC (`monthOf` below for
-// Stripe, afdian.mjs for Afdian, the doorman for Ko-fi), so the boundary is the
-// same for all of them.
+// counts every record. Stripe, Afdian and Ko-fi stamp `month` in UTC (`monthOf`
+// below, afdian.mjs, the doorman). A hand-written ledger entry carries the month
+// on its bill, which for cn-record.mjs is China time.
 
 /** "YYYY-MM" in UTC, the month a record carries. */
 export const monthOf = (ms) => new Date(ms).toISOString().slice(0, 7);

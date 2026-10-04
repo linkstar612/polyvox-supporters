@@ -54,9 +54,10 @@ That gap is the only reason the Worker exists.
 
 A goal with `"kind": "monthly"` counts only records whose `month` is the
 current UTC month, so its bar starts over at 00:00 UTC on the 1st. Any other
-kind counts every record. Every rail stamps `month` in UTC; a hand-written
-ledger entry takes the month the money arrived. The wall still reads every
-month, so card levels and month strips are unaffected.
+kind counts every record. Stripe, Afdian and Ko-fi stamp `month` in UTC; a
+hand-written ledger entry, `cn-record.mjs` included, takes the month on the
+bill. The wall still reads every month, so card levels and month strips are
+unaffected.
 
 `manual_usd` in `overrides.json` is added on every run, so on a monthly goal it
 lands in every month. A one-off lump sum goes in `ledger.json` with its month
