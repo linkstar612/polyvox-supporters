@@ -16,12 +16,13 @@ the software-update channel.
 |---|---|
 | `manifest.json` | The live data the app polls (schema 1). Rebuilt by the Action — do not hand-edit goals or supporters. The two top-level `cn_alipay_url` / `cn_wechat_url` keys are the exception: hand-kept payloads of the mainland wallet codes, which `aggregate.mjs` parses and writes back untouched (see the app repo's `docs/CN-QR-DONATION-SETUP.md`). |
 | `aggregate.mjs` | Folds Stripe + Afdian + `ledger.json` + `overrides.json` into the goal totals and the wall, and pulls the tester roster from the license mint. |
+| `goals.mjs` | Sums each goal bar. A `monthly` goal counts the current UTC month only (see [Goal totals](#goal-totals)). |
 | `afdian.mjs` | The Afdian (爱发电) rail: signing, paging, and the order/sponsor split. Importable with no side effects, which is what makes it testable. |
 | `test/` | `npm test` (`node --test "test/**/*.test.mjs"`). No dependencies. |
 | `ledger.json` | Append-only record of donations Stripe cannot see. One entry per payment. |
 | `ledger-append.mjs` | Adds one entry from a `repository_dispatch` payload; dedupes and strips anything not allowlisted. |
 | `cn-record.mjs` | Turns a WeChat / Alipay bill line into a ledger entry and hands it to `ledger-append.mjs`. The manual half of the mainland rail. |
-| `overrides.json` | Permanent founder entries, a manual per-goal $ nudge for money with no donor attached, the CNY rate, the Afdian goal, and the tester-wall approval and strike lists. |
+| `overrides.json` | Permanent founder entries, a standing per-goal $ nudge (added every month on a monthly goal), the CNY rate, the Afdian goal, and the tester-wall approval and strike lists. |
 | `wall.mjs` | Splits the opted-in roster into what is approved and what is waiting. |
 | `wall-pending.json` | Opted-in testers waiting for the owner. Rebuilt every run; a queue, never a roster. |
 | `worker/kofi-doorman.js` | Cloudflare Worker that turns a Ko-fi webhook into a `repository_dispatch`. |
@@ -48,6 +49,26 @@ Stripe ◀──polled by the cron───────────────�
 Ko-fi is push-only with no read API, and its webhook cannot set an
 `Authorization` header — which is exactly what `repository_dispatch` needs.
 That gap is the only reason the Worker exists.
+
+## Goal totals
+
+A goal with `"kind": "monthly"` counts only records whose `month` is the
+current UTC month, so its bar starts over at 00:00 UTC on the 1st. Any other
+kind counts every record. Every rail stamps `month` in UTC; a hand-written
+ledger entry takes the month the money arrived. The wall still reads every
+month, so card levels and month strips are unaffected.
+
+`manual_usd` in `overrides.json` is added on every run, so on a monthly goal it
+lands in every month. A one-off lump sum goes in `ledger.json` with its month
+and `name: ""`.
+
+**Stripe subscription renewals do not reach a monthly bar.** The restricted key
+reads Checkout Sessions only, and a "Fund monthly" subscription makes one
+Checkout Session, at signup. Each renewal after that is an invoice this key
+cannot see, so a Stripe subscriber counts in the month they subscribed and not
+after. Counting renewals needs the key to also read *Invoices*, and a poll of
+paid invoices with `billing_reason: subscription_cycle`. Ko-fi renewals are
+counted: the doorman forwards every `Subscription` payment.
 
 ## One-time setup
 

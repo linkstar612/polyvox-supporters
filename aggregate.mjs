@@ -41,6 +41,7 @@ import {
   fold,
   mergeTesters,
 } from "./cards.mjs";
+import { goalTotal, monthOf } from "./goals.mjs";
 import { partitionTesters } from "./wall.mjs";
 
 /// The license mint that holds the tester wall. Its hostname is compiled into
@@ -88,8 +89,6 @@ const read = async (path, fallback) => {
     return fallback;
   }
 };
-
-const monthOf = (ms) => new Date(ms).toISOString().slice(0, 7);
 
 // --- Stripe ----------------------------------------------------------------
 
@@ -256,12 +255,10 @@ const records = applyAliases(
   overrides.aliases ?? {},
 );
 
+// A monthly goal counts this UTC month only (goals.mjs). `records` itself stays
+// whole: the wall's month history and levels read every month.
 for (const goal of manifest.goals) {
-  const earned = records
-    .filter((r) => r.goal === goal.id)
-    .reduce((sum, r) => sum + r.usd, 0);
-  const manual = overrides.manual_usd?.[goal.id] ?? 0;
-  goal.current_usd = Math.round((earned + manual) * 100) / 100;
+  goal.current_usd = goalTotal(goal, records, { manualUsd: overrides.manual_usd });
 }
 
 // --- R-DON.6: the opt-in pre-alpha tester roster ------------------------------
