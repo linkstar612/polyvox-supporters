@@ -45,6 +45,20 @@ if (!entry.id || !entry.platform || !/^\d{4}-\d{2}$/.test(entry.month)) {
   console.error("Malformed entry (id / platform / month) — refusing.", entry);
   process.exit(1);
 }
+
+// When the money moved, for the first-of-the-month trophy (cards.mjs): a date,
+// or a date and time with its zone, on the same clock as `month`. A bad one is
+// dropped, never refused. The doorman has already answered Ko-fi by now, so a
+// refused entry is a donation nobody retries, and the trophy is not worth one.
+const at = String(incoming.at ?? "").trim();
+if (at) {
+  const shaped = /^\d{4}-\d{2}-\d{2}(T\d{2}:\d{2}(:\d{2}(\.\d{1,9})?)?(Z|[+-]\d{2}:\d{2}))?$/.test(at);
+  if (shaped && !Number.isNaN(Date.parse(at)) && at.slice(0, 7) === entry.month) {
+    entry.at = at;
+  } else {
+    console.warn(`Ignoring at "${at.slice(0, 40)}": not a dated time inside ${entry.month}.`);
+  }
+}
 if (!Number.isFinite(entry.amount) || entry.amount <= 0) {
   console.error("Non-positive amount — refusing.", entry);
   process.exit(1);

@@ -17,8 +17,11 @@ import {
   buildUnlocks,
   buildWall,
   codeFrom,
+  dayOf,
+  firstOfMonth,
   hashCode,
   levelFor,
+  markFirstOfMonth,
   mergeTesters,
 } from "../cards.mjs";
 
@@ -239,7 +242,15 @@ test("an empty alias map returns the records unchanged", () => {
 
 test("the catalog is complete and every entry is renderable", () => {
   const ids = ACHIEVEMENTS.map((a) => a.id);
-  for (const id of ["founder", "prealpha", "alpha", "first_light", "two_rails", "three_months"]) {
+  for (const id of [
+    "founder",
+    "prealpha",
+    "alpha",
+    "first_light",
+    "two_rails",
+    "three_months",
+    "first_of_month",
+  ]) {
     assert.ok(ids.includes(id), `catalog is missing ${id}`);
   }
   for (const a of ACHIEVEMENTS) {
@@ -248,4 +259,117 @@ test("the catalog is complete and every entry is renderable", () => {
     assert.ok(a.description.length <= 120, `description cap: ${a.description}`);
     assert.equal(a.description.includes("—"), false, "no em dash in a shipped string");
   }
+});
+
+// -- first of the month ---------------------------------------------------------
+
+const badgesOf = (wall, name) => wall.find((c) => c.name === name)?.badges ?? [];
+
+test("everyone who gave on the 1st opens the month", () => {
+  const { records } = markFirstOfMonth([
+    rec({ name: "Wen", month: "2026-10", at: "2026-10-01T00:04:00Z" }),
+    rec({ name: "Mei", month: "2026-10", at: "2026-10-01T22:40:00Z" }),
+    rec({ name: "Jun", month: "2026-10", at: "2026-10-02T09:00:00Z" }),
+  ]);
+  const wall = buildWall(records, []);
+  assert.ok(badgesOf(wall, "Wen").includes("first_of_month"));
+  assert.ok(badgesOf(wall, "Mei").includes("first_of_month"));
+  assert.equal(badgesOf(wall, "Jun").includes("first_of_month"), false);
+});
+
+test("with nobody on the 1st, the earliest payment takes the month", () => {
+  const { records, untimed } = markFirstOfMonth([
+    rec({ name: "Jun", month: "2026-10", at: "2026-10-03T08:00:00Z" }),
+    rec({ name: "Wen", month: "2026-10", at: "2026-10-02T12:00:00Z" }),
+    rec({ name: "Mei", month: "2026-10", at: "2026-10-02T12:00:01Z" }),
+  ]);
+  const wall = buildWall(records, []);
+  assert.deepEqual(
+    wall.filter((c) => c.badges.includes("first_of_month")).map((c) => c.name),
+    ["Wen"],
+  );
+  assert.deepEqual(untimed, []);
+});
+
+test("a payment with no time blocks the earliest rule but never the 1st", () => {
+  const { records, untimed } = markFirstOfMonth([
+    // October: an undated Ko-fi entry might have come first, so the 3rd wins nothing.
+    rec({ name: "Old", month: "2026-10" }),
+    rec({ name: "Jun", month: "2026-10", at: "2026-10-03T08:00:00Z" }),
+    // November: the same gap cannot take away a 1st somebody can show.
+    rec({ name: "Old", month: "2026-11" }),
+    rec({ name: "Wen", month: "2026-11", at: "2026-11-01" }),
+  ]);
+  const wall = buildWall(records, []);
+  assert.equal(badgesOf(wall, "Jun").includes("first_of_month"), false);
+  assert.equal(badgesOf(wall, "Old").includes("first_of_month"), false);
+  assert.ok(badgesOf(wall, "Wen").includes("first_of_month"), "a bare date on the 1st counts");
+  assert.deepEqual(untimed, ["2026-10"]);
+});
+
+test("an anonymous first leaves the month unclaimed, but its code unlocks it", () => {
+  const { records } = markFirstOfMonth([
+    rec({ month: "2026-10", at: "2026-10-02T03:00:00Z", note: "PV-A2B3C4" }),
+    rec({ name: "Wen", month: "2026-10", at: "2026-10-05T03:00:00Z" }),
+  ]);
+  const wall = buildWall(records, []);
+  // Not passed down to the second donor.
+  assert.equal(badgesOf(wall, "Wen").includes("first_of_month"), false);
+  assert.deepEqual(buildUnlocks(records, wall)[hashCode("PV-A2B3C4")], [
+    "first_light",
+    "first_of_month",
+  ]);
+});
+
+test("a bill in Beijing time counts its own 1st and is ordered by instant", () => {
+  // 07:00 on the 1st in Beijing is 23:00 UTC on the 30th, and the bill files it
+  // under October: it opened October on the clock it was paid on.
+  const early = markFirstOfMonth([
+    rec({ name: "Mei", platform: "wechat", month: "2026-10", at: "2026-10-01T07:00:00+08:00" }),
+    rec({ name: "Wen", platform: "kofi", month: "2026-10", at: "2026-10-01T00:30:00Z" }),
+  ]);
+  const both = buildWall(early.records, []);
+  assert.ok(badgesOf(both, "Mei").includes("first_of_month"));
+  assert.ok(badgesOf(both, "Wen").includes("first_of_month"));
+
+  // Nobody on the 1st: the bill's 3rd is the 2nd in UTC, and earlier than a
+  // Ko-fi payment on the UTC 2nd, so it is first however the days read.
+  const later = markFirstOfMonth([
+    rec({ name: "Mei", platform: "wechat", month: "2026-10", at: "2026-10-03T07:00:00+08:00" }),
+    rec({ name: "Wen", platform: "kofi", month: "2026-10", at: "2026-10-02T23:30:00Z" }),
+  ]);
+  const wall = buildWall(later.records, []);
+  assert.ok(badgesOf(wall, "Mei").includes("first_of_month"));
+  assert.equal(badgesOf(wall, "Wen").includes("first_of_month"), false);
+});
+
+test("an at outside its own month is no time at all", () => {
+  assert.equal(dayOf({ month: "2026-10", at: "2026-10-01T07:00:00+08:00" }), "2026-10-01");
+  assert.equal(dayOf({ month: "2026-10", at: "2026-09-30T23:00:00Z" }), "");
+  assert.equal(dayOf({ month: "2026-10" }), "");
+  assert.equal(dayOf({ month: "2026-10", at: "soon" }), "");
+});
+
+test("wall-only rows never open a month, and the input is not mutated", () => {
+  const input = [
+    // An Afdian sponsor row: a name and no money.
+    rec({ name: "Jun", platform: "afdian", month: "2026-10", usd: 0, at: "2026-10-01T00:00:00Z" }),
+    rec({ name: "Wen", month: "2026-10", at: "2026-10-04T00:00:00Z" }),
+  ];
+  const { won } = firstOfMonth(input);
+  assert.deepEqual([...won].map((r) => r.name), ["Wen"]);
+  const { records } = markFirstOfMonth(input);
+  assert.equal("first_of_month" in input[1], false);
+  assert.equal(records[1].first_of_month, true);
+});
+
+test("the trophy is earned once, however many months it was opened in", () => {
+  const { records } = markFirstOfMonth([
+    rec({ name: "Wen", month: "2026-10", at: "2026-10-01T01:00:00Z" }),
+    rec({ name: "Wen", month: "2026-11", at: "2026-11-01T01:00:00Z" }),
+  ]);
+  const [card] = buildWall(records, []);
+  assert.equal(card.badges.filter((b) => b === "first_of_month").length, 1);
+  // Catalog order keeps it after the older trophies.
+  assert.deepEqual(card.badges, ["first_light", "first_of_month"]);
 });

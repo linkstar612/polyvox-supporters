@@ -39,6 +39,7 @@ import {
   buildUnlocks,
   buildWall,
   fold,
+  markFirstOfMonth,
   mergeTesters,
 } from "./cards.mjs";
 import { goalTotal, monthOf } from "./goals.mjs";
@@ -151,6 +152,10 @@ async function stripeEntries(key, skipPi) {
         id: `stripe:${s.id}`,
         platform: "stripe",
         month: monthOf(s.created * 1000),
+        // When the session opened, a minute or two before it was paid. The
+        // restricted key reads Checkout Sessions only, and this is the one
+        // time a session carries.
+        at: new Date(s.created * 1000).toISOString(),
         amount: (s.amount_total ?? 0) / minor,
         currency,
         goal: LINK_TO_GOAL[s.payment_link] ?? DEFAULT_GOAL,
@@ -239,20 +244,37 @@ const skipPi = new Set(
 );
 
 // Both rails now speak amount+currency; the USD conversion happens once, here.
-const records = applyAliases(
-  [
-    ...(key ? await stripeEntries(key, skipPi) : []),
-    ...ledger.entries,
-    ...afdianEntries,
-  ].map((e) => ({
-    ...e,
-    usd: toUsd(Number(e.amount ?? 0), e.currency, fx),
-    goal: e.goal ?? DEFAULT_GOAL,
-  })),
-  // overrides.json -> aliases: a name a live rail delivered, folded onto the
-  // card it belongs to. Applied at the source so the wall and the unlocks
-  // agree on who a coded donation was from.
-  overrides.aliases ?? {},
+// The first-of-the-month trophy is marked on the records themselves, after the
+// aliases, so it rides into the wall and the unlocks with everything else.
+const { records, untimed } = markFirstOfMonth(
+  applyAliases(
+    [
+      ...(key ? await stripeEntries(key, skipPi) : []),
+      ...ledger.entries,
+      ...afdianEntries,
+    ].map((e) => ({
+      ...e,
+      usd: toUsd(Number(e.amount ?? 0), e.currency, fx),
+      goal: e.goal ?? DEFAULT_GOAL,
+    })),
+    // overrides.json -> aliases: a name a live rail delivered, folded onto the
+    // card it belongs to. Applied at the source so the wall and the unlocks
+    // agree on who a coded donation was from.
+    overrides.aliases ?? {},
+  ),
+);
+// An Afdian order is anonymous by design (afdian.mjs) and its sponsor row
+// carries the name, so an order that opened a month hands the trophy to that
+// row. Anybody else anonymous leaves their month unclaimed.
+const afdianFirsts = new Set(
+  records
+    .filter((r) => r.first_of_month && r.platform === "afdian" && r.afdian_user_id)
+    .map((r) => `afdian-sponsor:${r.afdian_user_id}`),
+);
+afdianWall = afdianWall.map((s) => (afdianFirsts.has(s.id) ? { ...s, first_of_month: true } : s));
+console.log(
+  `First of the month: ${records.filter((r) => r.first_of_month).length} payment(s) earned it` +
+    (untimed.length ? `; scored on the 1st only (a payment has no time): ${untimed.join(", ")}` : ""),
 );
 
 // A monthly goal counts this UTC month only (goals.mjs). `records` itself stays

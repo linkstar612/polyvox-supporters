@@ -71,6 +71,26 @@ after. Counting renewals needs the key to also read *Invoices*, and a poll of
 paid invoices with `billing_reason: subscription_cycle`. Ko-fi renewals are
 counted: the doorman forwards every `Subscription` payment.
 
+## First of the month
+
+The `first_of_month` trophy goes to everyone who gave on the 1st. In a month
+nobody opened on the 1st it goes to that month's earliest payment, and if that
+payment was anonymous the month stays unclaimed (a donation code on it still
+unlocks the trophy in that donor's app). It is earned once per person, like
+the others, and shows no amount.
+
+It reads `at`, when the money moved. Stripe takes it from the Checkout Session,
+Afdian from the order and Ko-fi from the webhook's `timestamp`, all in UTC. A
+hand entry carries the time on its bill with the zone (`cn-record.mjs` writes
+`+08:00`), and the day is read on that clock, so a WeChat payment at 07:00 on
+the 1st in Beijing counts as the 1st. The earliest payment is compared as an
+instant, across clocks.
+
+A payment with no `at` cannot be placed. It never takes away somebody's 1st,
+but while one sits in a month, nobody is named that month's first: the run log
+lists those months as "scored on the 1st only". The Ko-fi entries from July to
+September 2026 predate `at`, so those months can only be won on the 1st.
+
 ## One-time setup
 
 1. **Restricted Stripe key** — Dashboard → Developers → API keys → *Create
@@ -131,6 +151,7 @@ are hand-appended. Add an entry to `ledger.json` and let the Action rebuild:
   "id": "patreon:2026-07-alex",
   "platform": "patreon",
   "month": "2026-07",
+  "at": "2026-07-12T21:05:00+09:00",
   "amount": 10,
   "currency": "USD",
   "goal": "living",
@@ -141,7 +162,10 @@ are hand-appended. Add an entry to `ledger.json` and let the Action rebuild:
 ```
 
 `id` must be unique — it is the dedupe key. `name: ""` counts toward the goal
-without naming anyone.
+without naming anyone. `at` is the payment time from the receipt, with its zone
+(a bare `2026-07-12` works when there is no time); it must fall inside `month`.
+Leave it off and the entry still counts, but its month can then only be won on
+the 1st ([First of the month](#first-of-the-month)).
 
 ### …including a Stripe payment that predates the poller
 
@@ -225,6 +249,7 @@ The entry it writes:
   "id": "wechat:2026-09-05-1652-66.00",
   "platform": "wechat",
   "month": "2026-09",
+  "at": "2026-09-05T16:52:00+08:00",
   "amount": 66,
   "currency": "CNY",
   "goal": "living",

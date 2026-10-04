@@ -14,10 +14,12 @@
 // any memo text that is not the chosen display name never goes in: ledger.json
 // is world-readable. The checks below refuse the obvious shapes of that mistake.
 //
-// Times are as printed in her bill (Asia/Shanghai); they only feed the dedupe
-// id, so the zone never matters as long as the same bill line always produces
-// the same id. Validation, dedupe and the write are ledger-append.mjs's job,
-// so this file builds the entry and hands it over; nothing is duplicated here.
+// Times are as printed in her bill (Asia/Shanghai). They feed the dedupe id,
+// which only needs the same bill line to produce the same id, and `at`, which
+// carries the +08:00 zone so the first-of-the-month trophy (cards.mjs) can
+// order the payment against the other rails. Validation, dedupe and the write
+// are ledger-append.mjs's job, so this file builds the entry and hands it over;
+// nothing is duplicated here.
 
 import { readFileSync } from "node:fs";
 import { spawnSync } from "node:child_process";
@@ -73,6 +75,7 @@ function buildEntry(tokens) {
       id: `${platform}:${date}-${time.replace(":", "")}-${amount.toFixed(2)}`,
       platform,
       month: date.slice(0, 7),
+      at: `${date}T${time}:00+08:00`,
       amount,
       currency: "CNY",
       goal: opts.goal,

@@ -63,10 +63,17 @@ export default {
       return new Response("ok", { status: 200 });
     }
 
+    // When the money moved, in UTC like the other live rails. `month` is cut
+    // from the same string so the two can never disagree, and both fall back to
+    // the arrival time together when Ko-fi sends none. `at` decides the
+    // first-of-the-month trophy (cards.mjs).
+    const paid = Date.parse(event.timestamp ?? "");
+    const at = new Date(Number.isNaN(paid) ? Date.now() : paid).toISOString();
     const entry = {
       id: `kofi:${event.kofi_transaction_id}`,
       platform: "kofi",
-      month: (event.timestamp ?? new Date().toISOString()).slice(0, 7),
+      month: at.slice(0, 7),
+      at,
       amount: Number(event.amount ?? 0),
       currency: event.currency ?? "USD",
       // Ko-fi has no per-goal concept, so its money funds the general goal.

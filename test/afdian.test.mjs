@@ -207,6 +207,22 @@ test("the month comes from create_time, never from the order's month count", () 
   assert.equal(noTime.month, "2026-09");
 });
 
+test("an order carries its payment time and its sponsor's id, never a guessed time", () => {
+  const [rec] = orderRecords([order({ create_time: 1_772_000_000 })], { goal: "living" });
+  assert.equal(rec.at, new Date(1_772_000_000 * 1000).toISOString());
+  assert.equal(rec.at.slice(0, 7), rec.month);
+  // How a first-of-the-month order finds the sponsor row that carries its name.
+  assert.equal(rec.afdian_user_id, "u_backer");
+
+  // The month may fall back to the run's clock; the time must not, or a guess
+  // could open a month.
+  const [noTime] = orderRecords([order({ create_time: undefined })], {
+    goal: "living",
+    nowMs: Date.parse("2026-09-04T00:00:00Z"),
+  });
+  assert.equal(noTime.at, "");
+});
+
 // -- the wall ----------------------------------------------------------------
 
 test("sponsors carry a name and no money", () => {

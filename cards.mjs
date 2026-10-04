@@ -58,6 +58,12 @@ export const ACHIEVEMENTS = [
     description: "Gave in three different months.",
     color: "#f472b6",
   },
+  {
+    id: "first_of_month",
+    label: "First of the month",
+    description: "Gave on the 1st, or before anyone else that month.",
+    color: "#a3e635",
+  },
 ];
 
 /// Catalog order, so a card's trophy row is stable between runs.
@@ -112,6 +118,7 @@ export function badgesFor({
   monthCount = 0,
   entries = 0,
   founder = false,
+  firstOfMonth = false,
   prealpha = new Set(),
   eras = new Map(),
 } = {}) {
@@ -123,7 +130,81 @@ export function badgesFor({
   if (entries > 0) out.add("first_light");
   if (rails.length >= 2) out.add("two_rails");
   if (monthCount >= 3) out.add("three_months");
+  if (firstOfMonth) out.add("first_of_month");
   return [...out].sort((a, b) => (BADGE_RANK.get(a) ?? 99) - (BADGE_RANK.get(b) ?? 99));
+}
+
+// --- First of the month -------------------------------------------------------
+//
+// A monthly goal starts over at 00:00 UTC on the 1st (goals.mjs), and this is
+// the trophy for opening it. Everyone who gave on the 1st earns it. A month
+// nobody opened on the 1st goes to its earliest payment instead, and when that
+// payment was anonymous the month stays unclaimed rather than passing to the
+// second donor. Earned once per person, like every other trophy.
+//
+// `at` is when the money moved. The day is read on the record's own clock, the
+// same one its `month` came from: UTC for Stripe, Afdian and Ko-fi, the bill's
+// for a hand entry, so a WeChat payment at 07:00 Beijing time on the 1st counts
+// as the 1st. The earliest payment is compared as an instant instead, because a
+// day on one clock cannot be ordered against a day on another.
+//
+// A payment with no time cannot be placed. It never costs anybody a 1st they
+// can show, but while one sits in a month nobody is named that month's first:
+// it might have come first, and a trophy on the wrong person is worse than
+// none. That is why July to September 2026, whose Ko-fi entries predate `at`,
+// can only be won on the 1st.
+
+/** "YYYY-MM-DD" a record was paid on, or "" when its `at` is missing or falls
+ *  outside its own `month`. */
+export function dayOf(record) {
+  const at = String(record?.at ?? "");
+  return /^\d{4}-\d{2}-\d{2}/.test(at) && at.slice(0, 7) === record?.month ? at.slice(0, 10) : "";
+}
+
+/** Epoch milliseconds of a timed `at`, or NaN for a bare date or none. */
+function instantOf(record) {
+  const at = String(record?.at ?? "");
+  return dayOf(record) && /T\d{2}:\d{2}/.test(at) ? Date.parse(at) : NaN;
+}
+
+/** Every payment that earned the trophy, plus the months that could only be
+ *  scored on the 1st because a payment in them carries no time. Wall-only rows
+ *  carry no money and never open a month. */
+export function firstOfMonth(records) {
+  const byMonth = new Map();
+  for (const r of records ?? []) {
+    if (!(Number(r?.usd) > 0) || !/^\d{4}-\d{2}$/.test(String(r?.month ?? ""))) continue;
+    byMonth.set(r.month, [...(byMonth.get(r.month) ?? []), r]);
+  }
+  const won = new Set();
+  const untimed = [];
+  for (const [month, list] of [...byMonth].sort(([a], [b]) => a.localeCompare(b))) {
+    const onFirst = list.filter((r) => dayOf(r) === `${month}-01`);
+    if (onFirst.length) {
+      for (const r of onFirst) won.add(r);
+      continue;
+    }
+    const times = list.map(instantOf);
+    if (times.some(Number.isNaN)) {
+      untimed.push(month);
+      continue;
+    }
+    const first = Math.min(...times);
+    list.forEach((r, i) => {
+      if (times[i] === first) won.add(r);
+    });
+  }
+  return { won, untimed };
+}
+
+/** `records` with `first_of_month: true` on every payment that earned it. New
+ *  objects; the input is never mutated. */
+export function markFirstOfMonth(records) {
+  const { won, untimed } = firstOfMonth(records);
+  return {
+    records: (records ?? []).map((r) => (won.has(r) ? { ...r, first_of_month: true } : r)),
+    untimed,
+  };
 }
 
 /// Fold every record for one person into the card the wall renders. Identity
@@ -158,6 +239,7 @@ export function buildWall(records, founders, options = {}) {
       usd: 0,
       entries: 0,
       recurring: false,
+      firstOfMonth: false,
       link: "",
       style: "",
     };
@@ -166,6 +248,7 @@ export function buildWall(records, founders, options = {}) {
     person.usd += r.usd;
     person.entries += 1;
     person.recurring ||= Boolean(r.recurring);
+    person.firstOfMonth ||= r.first_of_month === true;
     person.link ||= r.link ?? "";
     // A style the supporter picked through the wall opt-in travels on the
     // record. First one wins; the hand-kept map below is the fallback.
@@ -193,6 +276,7 @@ export function buildWall(records, founders, options = {}) {
         rails,
         monthCount: months.length,
         entries: p.entries,
+        firstOfMonth: p.firstOfMonth,
         prealpha,
         eras,
       }),
@@ -251,7 +335,9 @@ export function codeFrom(record) {
 ///
 /// A donation always earns `first_light` by itself, which is the point. Beyond
 /// that the code inherits whatever its own card wears, so somebody who gave on
-/// two rails sees `two_rails` in the app without having to find their card.
+/// two rails sees `two_rails` in the app without having to find their card. A
+/// coded payment that opened a month unlocks `first_of_month` even when it was
+/// anonymous and so has no card to wear it on.
 export function buildUnlocks(records, wall = []) {
   const byName = new Map((wall ?? []).map((s) => [fold(s?.name), s]));
   const out = {};
@@ -260,6 +346,7 @@ export function buildUnlocks(records, wall = []) {
     if (!code) continue;
     const key = hashCode(code);
     const ids = new Set(out[key] ?? ["first_light"]);
+    if (r.first_of_month === true) ids.add("first_of_month");
     for (const b of byName.get(fold(r.name))?.badges ?? []) ids.add(b);
     out[key] = [...ids].sort((a, b) => (BADGE_RANK.get(a) ?? 99) - (BADGE_RANK.get(b) ?? 99));
   }

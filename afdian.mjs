@@ -109,6 +109,15 @@ function monthOf(unixSeconds, fallbackMs) {
   return new Date(ms).toISOString().slice(0, 7);
 }
 
+/// The payment time as an ISO instant, or "" when the order carries none. No
+/// fallback to the run's clock here: a guessed time could win the
+/// first-of-the-month trophy (cards.mjs), where a guessed month only places a
+/// card.
+function atOf(unixSeconds) {
+  const s = Number(unixSeconds);
+  return Number.isFinite(s) && s > 0 ? new Date(s * 1000).toISOString() : "";
+}
+
 /// Paid orders as ledger-shaped records, for the GOAL TOTAL only.
 ///
 /// Deliberately anonymous (`name: ""`). An order carries a `user_id` and no
@@ -132,10 +141,14 @@ export function orderRecords(orders, { goal, skipIds = new Set(), nowMs = Date.n
       id,
       platform: "afdian",
       month: monthOf(o?.create_time, nowMs),
+      at: atOf(o?.create_time),
       amount,
       currency: "CNY",
       goal,
       name: "",
+      // Never published. It is how an order that opened a month hands the
+      // trophy to its sponsor row, which is where the name lives.
+      afdian_user_id: String(o?.user_id ?? ""),
       link: "",
       // Afdian has no auto-renew: every term is a fresh human action, so no
       // order is a standing commitment on its own. A sponsor holding a current
