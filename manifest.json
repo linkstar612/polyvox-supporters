@@ -1,6 +1,6 @@
 {
   "schema": 1,
-  "updated_at": "2026-10-04T12:18:10.255Z",
+  "updated_at": "2026-10-04T17:01:49.672Z",
   "cn_alipay_url": "https://qr.alipay.com/fkx14384xioygstaelud788",
   "cn_wechat_url": "wxp://f2f0A9cBJGuK35Q_ORclkPEoLvRnarv0-O2anGVzEJLjtSwbjkkQTDjez35EAkqVZ_qV",
   "goals": [
@@ -8,7 +8,7 @@
       "id": "living",
       "kind": "monthly",
       "target_usd": 500,
-      "current_usd": 190.12,
+      "current_usd": 0,
       "fund_url": "https://buy.stripe.com/14A7sM9Sa3Shf1O2yr1Nu00",
       "fund_monthly_url": "https://buy.stripe.com/aFa14o7K260pcTGb4X1Nu0e"
     }
@@ -403,6 +403,12 @@
       "label": "Three months",
       "description": "Gave in three different months.",
       "color": "#f472b6"
+    },
+    {
+      "id": "first_of_month",
+      "label": "First of the month",
+      "description": "Gave on the 1st, or before anyone else that month.",
+      "color": "#a3e635"
     }
   ],
   "unlocks": {
