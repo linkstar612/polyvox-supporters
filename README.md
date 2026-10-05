@@ -63,13 +63,14 @@ unaffected.
 lands in every month. A one-off lump sum goes in `ledger.json` with its month
 and `name: ""`.
 
-**Stripe subscription renewals do not reach a monthly bar.** The restricted key
-reads Checkout Sessions only, and a "Fund monthly" subscription makes one
-Checkout Session, at signup. Each renewal after that is an invoice this key
-cannot see, so a Stripe subscriber counts in the month they subscribed and not
-after. Counting renewals needs the key to also read *Invoices*, and a poll of
-paid invoices with `billing_reason: subscription_cycle`. Ko-fi renewals are
-counted: the doorman forwards every `Subscription` payment.
+**Stripe subscription renewals count in the month they are paid.** A "Fund
+monthly" subscription makes one Checkout Session, at signup, and each renewal
+after that is a paid invoice with `billing_reason: subscription_cycle`.
+`stripe.mjs` books each renewal on the goal and the card of the session that
+started its subscription. The signup invoice is never counted twice: its
+session already carries that money. A renewal whose subscription no session
+started is skipped and counted in the run log. Ko-fi renewals are counted too:
+the doorman forwards every `Subscription` payment.
 
 ## First of the month
 
@@ -79,8 +80,8 @@ payment was anonymous the month stays unclaimed (a donation code on it still
 unlocks the trophy in that donor's app). It is earned once per person, like
 the others, and shows no amount.
 
-It reads `at`, when the money moved. Stripe takes it from the Checkout Session,
-Afdian from the order and Ko-fi from the webhook's `timestamp`, all in UTC. A
+It reads `at`, when the money moved. Stripe takes it from the Checkout Session
+(a renewal from the invoice's `paid_at`), Afdian from the order and Ko-fi from the webhook's `timestamp`, all in UTC. A
 hand entry carries the time on its bill with the zone (`cn-record.mjs` writes
 `+08:00`), and the day is read on that clock, so a WeChat payment at 07:00 on
 the 1st in Beijing counts as the 1st. The earliest payment is compared as an
@@ -94,9 +95,10 @@ September 2026 predate `at`, so those months can only be won on the 1st.
 ## One-time setup
 
 1. **Restricted Stripe key** — Dashboard → Developers → API keys → *Create
-   restricted key*. Grant **read** on *Checkout Sessions*; everything else
-   **None**, including *Payment Intents*. `aggregate.mjs` only ever lists
-   Checkout Sessions and reads `payment_intent` as the plain string id the list
+   restricted key*. Grant **read** on *Checkout Sessions* and *Invoices*;
+   everything else **None**, including *Payment Intents* and *Subscriptions*.
+   `stripe.mjs` only ever lists Checkout Sessions and paid invoices, and reads
+   `payment_intent` as the plain string id the list
    response already carries — it never expands or retrieves the intent, so
    granting that permission would widen the key for nothing. Copy the
    `rk_live_…`. Never use your `sk_live_` secret key here.

@@ -3,11 +3,13 @@
 // Runs in GitHub Actions (see .github/workflows/aggregate.yml) on a cron, on
 // manual dispatch, and immediately after the Ko-fi doorman appends to the
 // ledger. Needs one secret: STRIPE_RESTRICTED_KEY — a READ-ONLY restricted key
-// (Checkout Sessions: read). Never commit it.
+// (Checkout Sessions: read, Invoices: read). Never commit it.
 //
 // Four sources, two outputs:
 //
-//   Stripe API      · polled here, attributed to a goal by payment-link id
+//   Stripe API      · polled through stripe.mjs, attributed to a goal by
+//                     payment-link id. A subscription renewal is an
+//                     invoice, attributed through its signup session.
 //   Afdian API      · the CN rail, polled through afdian.mjs. Orders move the
 //                     goal, sponsors name the wall (AFDIAN_USER_ID +
 //                     AFDIAN_TOKEN). WeChat and Alipay personal codes are NOT
@@ -42,7 +44,8 @@ import {
   markFirstOfMonth,
   mergeTesters,
 } from "./cards.mjs";
-import { goalTotal, monthOf } from "./goals.mjs";
+import { goalTotal } from "./goals.mjs";
+import { stripeRenewals, stripeSessions } from "./stripe.mjs";
 import { partitionTesters } from "./wall.mjs";
 
 /// The license mint that holds the tester wall. Its hostname is compiled into
@@ -71,18 +74,6 @@ const DEFAULT_GOAL = "living";
 // only picks which of the three chips a card wears (§1.3).
 const PATRON_USD = 25;
 
-// The Stripe checkout custom field whose value is the donor's opt-in display
-// name. Add it to each Payment Link as an OPTIONAL text field — leaving it
-// blank is how a donor stays anonymous, so it must never be required.
-// Stripe derives the key from the label and permits alphanumerics only, so the
-// label "Display name" yields `displayname` — no underscore, however the README
-// once spelled it. Matched with non-alphanumerics stripped rather than compared
-// literally, because the cost of guessing that spelling wrong is not an error:
-// it is every donor silently landing on the wall as anonymous, indefinitely,
-// with a green workflow run each time.
-const NAME_FIELD = "displayname";
-const fieldKey = (key) => (key ?? "").toLowerCase().replace(/[^a-z0-9]/g, "");
-
 const read = async (path, fallback) => {
   try {
     return JSON.parse(await readFile(path, "utf8"));
@@ -90,89 +81,6 @@ const read = async (path, fallback) => {
     return fallback;
   }
 };
-
-// --- Stripe ----------------------------------------------------------------
-
-async function stripe(key, path, params = {}) {
-  const qs = new URLSearchParams(params).toString();
-  const res = await fetch(
-    `https://api.stripe.com/v1/${path}${qs ? `?${qs}` : ""}`,
-    { headers: { Authorization: `Bearer ${key}` } },
-  );
-  if (!res.ok) {
-    throw new Error(`Stripe ${path} → ${res.status}: ${await res.text()}`);
-  }
-  return res.json();
-}
-
-/** Currencies with no minor unit — `amount_total` is already whole. Dividing
- *  these by 100 would report a ¥5000 donation as ¥50. */
-const ZERO_DECIMAL = new Set([
-  "BIF", "CLP", "DJF", "GNF", "JPY", "KMF", "KRW", "MGA", "PYG",
-  "RWF", "UGX", "VND", "VUV", "XAF", "XOF", "XPF",
-]);
-
-/** Every paid checkout session, as ledger-shaped records.
- *
- *  Amounts are read off `s.currency` / `s.amount_total` and pushed through the
- *  same `toUsd` the ledger uses, which is correct on both sides of an Adaptive
- *  Pricing API change and needs no special-casing:
- *
- *  - **Current API**: `currency` is YOUR settlement currency and what the
- *    customer actually saw moved to `presentment_details`. A Thai donor's $5
- *    arrives as `usd`/500, `toUsd` is the identity, and the figure is exact.
- *  - **Older API**: `currency` was the customer's (`thb`) and yours sat in
- *    `currency_conversion`. `toUsd` converts through the manifest's FX
- *    snapshot — a few percent off, but never the ~36x error that reading a
- *    THB amount as USD would book.
- *
- *  `currency_conversion` is deliberately not consulted: Stripe has deprecated
- *  it and tells integrations to read `amount_total` directly, so branching on
- *  it would add a second code path that is scheduled to stop existing.
- *
- *  `skipPi` holds PaymentIntent ids already written into ledger.json by hand —
- *  a payment recorded before this rail was switched on would otherwise be
- *  counted a second time the moment it was. */
-async function stripeEntries(key, skipPi) {
-  const entries = [];
-  let startingAfter;
-  do {
-    const page = await stripe(key, "checkout/sessions", {
-      limit: "100",
-      status: "complete",
-      ...(startingAfter ? { starting_after: startingAfter } : {}),
-    });
-    for (const s of page.data) {
-      if (s.payment_status !== "paid") continue;
-      if (s.payment_intent && skipPi.has(s.payment_intent)) continue;
-      const named = (s.custom_fields ?? []).find((f) => fieldKey(f.key) === NAME_FIELD);
-      const currency = (s.currency ?? "usd").toUpperCase();
-      const minor = ZERO_DECIMAL.has(currency) ? 1 : 100;
-      entries.push({
-        id: `stripe:${s.id}`,
-        platform: "stripe",
-        month: monthOf(s.created * 1000),
-        // When the session opened, a minute or two before it was paid. The
-        // restricted key reads Checkout Sessions only, and this is the one
-        // time a session carries.
-        at: new Date(s.created * 1000).toISOString(),
-        amount: (s.amount_total ?? 0) / minor,
-        currency,
-        goal: LINK_TO_GOAL[s.payment_link] ?? DEFAULT_GOAL,
-        // An absent field, an empty field, or a link carrying no field at all
-        // all mean the same thing: counts toward the goal, not named.
-        name: (named?.text?.value ?? "").trim(),
-        link: "",
-        recurring: s.mode === "subscription",
-        // R-OCS.10: the donation code the app put on the link. Stripe hands it
-        // back verbatim, so this rail needs nothing typed by the donor.
-        client_reference_id: s.client_reference_id ?? "",
-      });
-    }
-    startingAfter = page.has_more ? page.data.at(-1).id : null;
-  } while (startingAfter);
-  return entries;
-}
 
 // --- shared -----------------------------------------------------------------
 
@@ -243,13 +151,32 @@ const skipPi = new Set(
   ledger.entries.map((e) => e.stripe_pi).filter(Boolean),
 );
 
+// Renewals of a "Fund monthly" subscription are invoices, attributed to the
+// goal and the donor of the Checkout Session that started the subscription.
+let stripeRecords = [];
+if (key) {
+  const { entries, bySubscription } = await stripeSessions(key, {
+    skipPi,
+    linkToGoal: LINK_TO_GOAL,
+    defaultGoal: DEFAULT_GOAL,
+  });
+  const renewals = await stripeRenewals(key, bySubscription, { skipPi });
+  stripeRecords = [...entries, ...renewals.entries];
+  console.log(
+    `Stripe: ${entries.length} session(s), ${renewals.entries.length} renewal(s)` +
+      (renewals.skipped
+        ? `; ${renewals.skipped} renewal(s) skipped, their subscription has no known Checkout Session`
+        : ""),
+  );
+}
+
 // Both rails now speak amount+currency; the USD conversion happens once, here.
 // The first-of-the-month trophy is marked on the records themselves, after the
 // aliases, so it rides into the wall and the unlocks with everything else.
 const { records, untimed } = markFirstOfMonth(
   applyAliases(
     [
-      ...(key ? await stripeEntries(key, skipPi) : []),
+      ...stripeRecords,
       ...ledger.entries,
       ...afdianEntries,
     ].map((e) => ({
