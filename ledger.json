@@ -107,6 +107,18 @@
       "link": "",
       "recurring": false,
       "note": "Payer memo was this exact string, which is already an opted-in wall name from Ko-fi (kofi:5af0f90d). Credited on that match; strike the name if it was not them."
+    },
+    {
+      "id": "kofi:c3a902dd-5687-444a-b44b-98f5ebec9863",
+      "platform": "kofi",
+      "month": "2026-10",
+      "amount": 5,
+      "currency": "USD",
+      "goal": "living",
+      "name": "Mizar",
+      "link": "",
+      "recurring": false,
+      "at": "2026-10-06T01:52:37.000Z"
     }
   ]
 }
