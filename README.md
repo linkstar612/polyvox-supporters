@@ -22,7 +22,7 @@ the software-update channel.
 | `ledger.json` | Append-only record of donations Stripe cannot see. One entry per payment. |
 | `ledger-append.mjs` | Adds one entry from a `repository_dispatch` payload; dedupes and strips anything not allowlisted. |
 | `cn-record.mjs` | Turns a WeChat / Alipay bill line into a ledger entry and hands it to `ledger-append.mjs`. The manual half of the mainland rail. |
-| `overrides.json` | Permanent founder entries, a standing per-goal $ nudge (added every month on a monthly goal), the CNY rate, the Afdian goal, and the tester-wall approval and strike lists. |
+| `overrides.json` | A standing per-goal $ nudge (added every month on a monthly goal), the CNY rate, the Afdian goal, and the tester-wall approval and strike lists. |
 | `wall.mjs` | Splits the opted-in roster into what is approved and what is waiting. |
 | `wall-pending.json` | Opted-in testers waiting for the owner. Rebuilt every run; a queue, never a roster. |
 | `worker/kofi-doorman.js` | Cloudflare Worker that turns a Ko-fi webhook into a `repository_dispatch`. |
@@ -91,6 +91,28 @@ A payment with no `at` cannot be placed. It never takes away somebody's 1st,
 but while one sits in a month, nobody is named that month's first: the run log
 lists those months as "scored on the 1st only". The Ko-fi entries from July to
 September 2026 predate `at`, so those months can only be won on the 1st.
+
+## Wall order and bands
+
+The wall is ranked by what each person has given in total, across every rail
+(R-DON.14). `place` is 1 for the most and the supporters array is published in
+that order; a tie goes to more months supported, then the earlier `since`, then
+the name. `band` reads the same total against five steps named after Google
+Play's tiers, which the app draws as materials:
+
+| band | total |
+|---|---|
+| bronze | under $10 |
+| silver | $10 |
+| gold | $25 |
+| platinum | $50 |
+| diamond | $100 |
+
+No amount is published: the order and the band show a range, the figure stays
+inside `cards.mjs`, and `test/cards.test.mjs` fails if a row ever carries one.
+`level` (months supported) stays on every card for apps from before the band.
+There is no founder trophy and no founders list; every card comes from a
+payment.
 
 ## One-time setup
 
@@ -409,8 +431,7 @@ public file.
   donor's Ko-fi *message* is never forwarded — it was written to the developer,
   not to a public wall.
 - **`manifest.json` is rebuilt, not patched.** A name added to it by hand will
-  be gone on the next run; put founders in `overrides.json` and everyone else in
-  `ledger.json`.
+  be gone on the next run; put the payment in `ledger.json`.
 - **Amounts never reach the app per person.** The manifest carries aggregate USD
   per goal and a tier chip per supporter; the amount that earned the tier stays
   in `ledger.json`.

@@ -4,14 +4,18 @@
 // work at the top level (it polls Stripe and Afdian and writes files), so
 // anything importable has to live beside it, the way wall.mjs already does.
 //
-// Three derived fields, all additive to `schema: 1`:
+// Five derived fields, all additive to `schema: 1`:
 //
 //   rails    every place one person's money arrived from, sorted and deduped.
 //            `platform` stays the first of them so an older app still reads a
 //            card it understands.
-//   level    1 to 4, from how many distinct months they have supported in. The
-//            app picks the card color from it. It is a duration, not a rank:
-//            no amount reaches this file (design 1.3).
+//   level    1 to 4, from how many distinct months they have supported in. A
+//            duration; apps from before `band` color the card by it.
+//   place    1 for whoever has given the most in total, then down the wall
+//            (R-DON.14). The supporters array is published in this order.
+//   band     bronze, silver, gold, platinum or diamond, from that same total
+//            (`BANDS`). The order and the band show a range; the total itself
+//            never reaches this file.
 //   badges   trophy ids from manifest.achievements. The first donation earns
 //            one by itself, which is the point: a wall you can join.
 //
@@ -21,13 +25,10 @@
 import { createHash } from "node:crypto";
 
 /// Every trophy the wall can show. `color` is the trophy's own, not the card's.
+/// Ids are permanent: unlock rows and installed apps key on them, so a trophy
+/// is renamed through its label (first_light reads "Backer" and two_rails
+/// "Multi-platform" since 2026-10-09) and never through its id.
 export const ACHIEVEMENTS = [
-  {
-    id: "founder",
-    label: "Founder",
-    description: "Here before there was anything to support.",
-    color: "#f2c14e",
-  },
   {
     id: "prealpha",
     label: "Pre-alpha tester",
@@ -42,14 +43,14 @@ export const ACHIEVEMENTS = [
   },
   {
     id: "first_light",
-    label: "First light",
-    description: "Sent a first donation.",
+    label: "Backer",
+    description: "Backed Polyvox with a donation.",
     color: "#fb923c",
   },
   {
     id: "two_rails",
-    label: "Two rails",
-    description: "Gave from two different places.",
+    label: "Multi-platform",
+    description: "Gave through more than one platform.",
     color: "#34d399",
   },
   {
@@ -106,6 +107,31 @@ export function levelFor(monthCount) {
   return 1;
 }
 
+/// The bands a card can wear, lowest first, with the total in USD that reaches
+/// each (R-DON.14). Named after Google Play's five so the order reads without a
+/// legend; the app draws each one as a material. The steps sit on the
+/// quick-donate amounts: one $10 is silver, one $25 gold, one $50 platinum.
+export const BANDS = [
+  { id: "bronze", min_usd: 0 },
+  { id: "silver", min_usd: 10 },
+  { id: "gold", min_usd: 25 },
+  { id: "platinum", min_usd: 50 },
+  { id: "diamond", min_usd: 100 },
+];
+
+/// Whole cents, so a total that converted through CNY lands on the step it was
+/// paid to reach rather than a float's width under it.
+const cents = (usd) => Math.round((Number(usd) || 0) * 100);
+
+/// The highest band a total reaches. Everybody on the wall gave something, so
+/// the floor is bronze.
+export function bandFor(usd) {
+  const c = cents(usd);
+  let band = BANDS[0].id;
+  for (const b of BANDS) if (c >= b.min_usd * 100) band = b.id;
+  return band;
+}
+
 /// Which trophies a card wears.
 ///
 /// `prealpha` is the only one that is not derived: it is the hand-kept list in
@@ -117,14 +143,12 @@ export function badgesFor({
   rails = [],
   monthCount = 0,
   entries = 0,
-  founder = false,
   firstOfMonth = false,
   prealpha = new Set(),
   eras = new Map(),
 } = {}) {
   const key = fold(name);
   const out = new Set();
-  if (founder) out.add("founder");
   if (prealpha.has(key) || eras.get(key) === "prealpha") out.add("prealpha");
   if (eras.get(key) === "alpha") out.add("alpha");
   if (entries > 0) out.add("first_light");
@@ -212,7 +236,10 @@ export function markFirstOfMonth(records) {
 /// stable donor id, and merging two people who chose the same public name is
 /// the acceptable end of that trade. The same fold is what joins one person's
 /// Ko-fi and WeChat rails onto a single card.
-export function buildWall(records, founders, options = {}) {
+///
+/// Every card comes from a payment. The hand-kept founders list is gone
+/// (R-DON.14): nobody could fairly hold that trophy, so nothing grants it.
+export function buildWall(records, options = {}) {
   const {
     patronUsd = 25,
     prealpha = new Set(),
@@ -256,7 +283,7 @@ export function buildWall(records, founders, options = {}) {
     byPerson.set(key, person);
   }
 
-  const derived = [...byPerson.values()].map((p) => {
+  const cards = [...byPerson.values()].map((p) => {
     const tier = p.recurring || p.usd >= patronUsd ? "patron" : "supporter";
     const months = [...p.months].sort();
     const rails = [...p.rails].sort();
@@ -271,6 +298,9 @@ export function buildWall(records, founders, options = {}) {
       platform: p.platform,
       rails,
       level: levelFor(months.length),
+      // Set once the wall is sorted, below.
+      place: 0,
+      band: bandFor(p.usd),
       badges: badgesFor({
         name: p.name,
         rails,
@@ -288,20 +318,22 @@ export function buildWall(records, founders, options = {}) {
     };
   });
 
-  // Founders are hand-kept and never derived. A payment cannot grant the tier,
-  // and lapsing cannot remove it (design section 2, `permanent`).
-  const permanent = (founders ?? []).map((f) => {
-    const style = styleFor(f.name);
-    return {
-      ...f,
-      rails: Array.isArray(f.rails) ? f.rails : [],
-      level: levelFor(f.level ?? 4),
-      badges: badgesFor({ name: f.name, founder: true, prealpha, eras }),
-      ...(style ? { style } : {}),
-    };
+  // Most given first (R-DON.14). A tie goes to whoever supported in more
+  // months, then to whoever came first, then to the name, so the order never
+  // depends on which rail answered first. The totals stay in this function:
+  // only the place they produce is published.
+  const totals = new Map([...byPerson.entries()].map(([key, p]) => [key, cents(p.usd)]));
+  cards.sort(
+    (a, b) =>
+      totals.get(fold(b.name)) - totals.get(fold(a.name)) ||
+      Object.keys(b.months).length - Object.keys(a.months).length ||
+      String(a.since).localeCompare(String(b.since)) ||
+      fold(a.name).localeCompare(fold(b.name)),
+  );
+  cards.forEach((card, i) => {
+    card.place = i + 1;
   });
-
-  return [...permanent, ...derived];
+  return cards;
 }
 
 // --- R-OCS.10: tying a donation back to the app that made it -----------------

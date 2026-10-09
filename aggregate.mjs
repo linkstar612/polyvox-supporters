@@ -19,8 +19,7 @@
 //                     pixiv, BOOTH, WeChat and Alipay by hand). One record per
 //                     payment.
 //   overrides.json  · a manual per-goal USD nudge, the CNY rate, the wall
-//                     strike list, and the permanent founder entries that
-//                     predate any payment rail.
+//                     strike list, the pre-alpha roster and name aliases.
 //
 // The second output is `manifest.testers` (R-DON.6): the opt-in pre-alpha
 // tester roster, read from the license mint with MINT_ADMIN_TOKEN. Nobody is on
@@ -99,7 +98,7 @@ function toUsd(amount, currency, fx) {
 // --- main -------------------------------------------------------------------
 
 const manifest = JSON.parse(await readFile("manifest.json", "utf8"));
-const overrides = await read("overrides.json", { manual_usd: {}, founders: [] });
+const overrides = await read("overrides.json", { manual_usd: {} });
 const ledger = await read("ledger.json", { entries: [] });
 
 // One FX table, not two. `overrides.fx.cny_per_usd` is patched over the
@@ -282,7 +281,6 @@ const eras = new Map(mintTesters.map((t) => [fold(t?.name), String(t?.badge ?? "
 manifest.achievements = ACHIEVEMENTS;
 manifest.supporters = buildWall(
   [...records, ...applyAliases(afdianWall, overrides.aliases ?? {})],
-  overrides.founders ?? [],
   {
   patronUsd: PATRON_USD,
   prealpha,

@@ -11,9 +11,11 @@ import { test } from "node:test";
 
 import {
   ACHIEVEMENTS,
+  BANDS,
   CARD_STYLES,
   applyAliases,
   badgesFor,
+  bandFor,
   buildUnlocks,
   buildWall,
   codeFrom,
@@ -41,7 +43,6 @@ test("two rails fold into one card, and platform still names the first", () => {
       rec({ name: "Wen", platform: "kofi", month: "2026-08" }),
       rec({ name: "wen", platform: "wechat", month: "2026-09", usd: 0.15 }),
     ],
-    [],
   );
   assert.equal(wall.length, 1);
   assert.equal(wall[0].name, "Wen");
@@ -57,7 +58,6 @@ test("rails are sorted and deduped", () => {
       rec({ name: "Wen", platform: "wechat", month: "2026-09" }),
       rec({ name: "Wen", platform: "kofi", month: "2026-09" }),
     ],
-    [],
   );
   assert.deepEqual(wall[0].rails, ["kofi", "wechat"]);
 });
@@ -72,19 +72,18 @@ test("level counts months, not money", () => {
   assert.equal(levelFor(7), 4);
   assert.equal(levelFor(30), 4);
 
-  const one = buildWall([rec({ name: "A", usd: 500 })], []);
+  const one = buildWall([rec({ name: "A", usd: 500 })]);
   assert.equal(one[0].level, 1);
   const four = buildWall(
     ["2026-01", "2026-02", "2026-03", "2026-04"].map((m) =>
       rec({ name: "B", month: m, usd: 1 }),
     ),
-    [],
   );
   assert.equal(four[0].level, 3);
 });
 
 test("a first donation unlocks a trophy on its own", () => {
-  const wall = buildWall([rec({ name: "New" })], []);
+  const wall = buildWall([rec({ name: "New" })]);
   assert.deepEqual(wall[0].badges, ["first_light"]);
 });
 
@@ -95,33 +94,34 @@ test("two rails and three months each earn their own trophy", () => {
       rec({ name: "Wen", platform: "wechat", month: "2026-08" }),
       rec({ name: "Wen", platform: "wechat", month: "2026-09" }),
     ],
-    [],
   );
   assert.deepEqual(wall[0].badges, ["first_light", "two_rails", "three_months"]);
 });
 
 test("the hand-kept pre-alpha list stamps a card, case-folded", () => {
-  const wall = buildWall([rec({ name: "Flizee" })], [], {
+  const wall = buildWall([rec({ name: "Flizee" })], {
     prealpha: new Set(["flizee"]),
   });
   assert.deepEqual(wall[0].badges, ["prealpha", "first_light"]);
 });
 
 test("a mint era stamps a card the hand list never mentions", () => {
-  const wall = buildWall([rec({ name: "Zoe" })], [], {
+  const wall = buildWall([rec({ name: "Zoe" })], {
     eras: new Map([["zoe", "prealpha"]]),
   });
   assert.ok(wall[0].badges.includes("prealpha"));
-  const alpha = buildWall([rec({ name: "Ada" })], [], {
+  const alpha = buildWall([rec({ name: "Ada" })], {
     eras: new Map([["ada", "alpha"]]),
   });
   assert.ok(alpha[0].badges.includes("alpha"));
 });
 
-test("a founder wears the founder trophy and no donation trophy", () => {
-  const wall = buildWall([], [{ name: "F", tier: "founder", permanent: true }]);
-  assert.deepEqual(wall[0].badges, ["founder"]);
-  assert.equal(wall[0].permanent, true);
+test("nothing grants the founder trophy any more", () => {
+  assert.equal(ACHIEVEMENTS.some((a) => a.id === "founder"), false);
+  const wall = buildWall([rec({ name: "F" })], { prealpha: new Set(["f"]) });
+  assert.equal(wall.length, 1);
+  assert.equal(wall[0].badges.includes("founder"), false);
+  assert.equal(wall[0].permanent, false);
 });
 
 test("badges come out in catalog order", () => {
@@ -131,7 +131,6 @@ test("badges come out in catalog order", () => {
     rails: ["a", "b"],
     monthCount: 3,
     entries: 1,
-    founder: true,
     prealpha: new Set(["x"]),
   });
   const ranks = out.map((id) => ids.indexOf(id));
@@ -139,11 +138,11 @@ test("badges come out in catalog order", () => {
 });
 
 test("a hand-kept style lands on the card and an unknown one does not", () => {
-  const good = buildWall([rec({ name: "Wen" })], [], {
+  const good = buildWall([rec({ name: "Wen" })], {
     cardStyles: { wen: "aurora" },
   });
   assert.equal(good[0].style, "aurora");
-  const bad = buildWall([rec({ name: "Wen" })], [], {
+  const bad = buildWall([rec({ name: "Wen" })], {
     cardStyles: { Wen: "drop-tables" },
   });
   assert.equal(bad[0].style, undefined);
@@ -151,7 +150,7 @@ test("a hand-kept style lands on the card and an unknown one does not", () => {
 });
 
 test("a style the supporter picked beats the hand-kept fallback", () => {
-  const wall = buildWall([rec({ name: "Wen", style: "pulse" })], [], {
+  const wall = buildWall([rec({ name: "Wen", style: "pulse" })], {
     cardStyles: { wen: "aurora" },
   });
   assert.equal(wall[0].style, "pulse");
@@ -185,7 +184,6 @@ test("a coded donation unlocks its own card's trophies, keyed by hash", () => {
       rec({ name: "Wen", platform: "kofi", month: "2026-08", note: "PV-A2B3C4" }),
       rec({ name: "Wen", platform: "wechat", month: "2026-09" }),
     ],
-    [],
   );
   const unlocks = buildUnlocks(
     [rec({ name: "Wen", platform: "kofi", month: "2026-08", note: "PV-A2B3C4" })],
@@ -226,7 +224,7 @@ test("an alias folds a live-rail name onto the card it belongs to", () => {
     records.map((r) => r.name),
     ["Wen", "Wen"],
   );
-  const wall = buildWall(records, [], { prealpha: new Set(["wen"]) });
+  const wall = buildWall(records, { prealpha: new Set(["wen"]) });
   assert.equal(wall.length, 1);
   assert.deepEqual(wall[0].rails, ["stripe", "wechat"]);
   // The code rode the aliased record, so the hash wears the merged card's trophies.
@@ -243,7 +241,6 @@ test("an empty alias map returns the records unchanged", () => {
 test("the catalog is complete and every entry is renderable", () => {
   const ids = ACHIEVEMENTS.map((a) => a.id);
   for (const id of [
-    "founder",
     "prealpha",
     "alpha",
     "first_light",
@@ -271,7 +268,7 @@ test("everyone who gave on the 1st opens the month", () => {
     rec({ name: "Mei", month: "2026-10", at: "2026-10-01T22:40:00Z" }),
     rec({ name: "Jun", month: "2026-10", at: "2026-10-02T09:00:00Z" }),
   ]);
-  const wall = buildWall(records, []);
+  const wall = buildWall(records);
   assert.ok(badgesOf(wall, "Wen").includes("first_of_month"));
   assert.ok(badgesOf(wall, "Mei").includes("first_of_month"));
   assert.equal(badgesOf(wall, "Jun").includes("first_of_month"), false);
@@ -283,7 +280,7 @@ test("with nobody on the 1st, the earliest payment takes the month", () => {
     rec({ name: "Wen", month: "2026-10", at: "2026-10-02T12:00:00Z" }),
     rec({ name: "Mei", month: "2026-10", at: "2026-10-02T12:00:01Z" }),
   ]);
-  const wall = buildWall(records, []);
+  const wall = buildWall(records);
   assert.deepEqual(
     wall.filter((c) => c.badges.includes("first_of_month")).map((c) => c.name),
     ["Wen"],
@@ -300,7 +297,7 @@ test("a payment with no time blocks the earliest rule but never the 1st", () => 
     rec({ name: "Old", month: "2026-11" }),
     rec({ name: "Wen", month: "2026-11", at: "2026-11-01" }),
   ]);
-  const wall = buildWall(records, []);
+  const wall = buildWall(records);
   assert.equal(badgesOf(wall, "Jun").includes("first_of_month"), false);
   assert.equal(badgesOf(wall, "Old").includes("first_of_month"), false);
   assert.ok(badgesOf(wall, "Wen").includes("first_of_month"), "a bare date on the 1st counts");
@@ -312,7 +309,7 @@ test("an anonymous first leaves the month unclaimed, but its code unlocks it", (
     rec({ month: "2026-10", at: "2026-10-02T03:00:00Z", note: "PV-A2B3C4" }),
     rec({ name: "Wen", month: "2026-10", at: "2026-10-05T03:00:00Z" }),
   ]);
-  const wall = buildWall(records, []);
+  const wall = buildWall(records);
   // Not passed down to the second donor.
   assert.equal(badgesOf(wall, "Wen").includes("first_of_month"), false);
   assert.deepEqual(buildUnlocks(records, wall)[hashCode("PV-A2B3C4")], [
@@ -328,7 +325,7 @@ test("a bill in Beijing time counts its own 1st and is ordered by instant", () =
     rec({ name: "Mei", platform: "wechat", month: "2026-10", at: "2026-10-01T07:00:00+08:00" }),
     rec({ name: "Wen", platform: "kofi", month: "2026-10", at: "2026-10-01T00:30:00Z" }),
   ]);
-  const both = buildWall(early.records, []);
+  const both = buildWall(early.records);
   assert.ok(badgesOf(both, "Mei").includes("first_of_month"));
   assert.ok(badgesOf(both, "Wen").includes("first_of_month"));
 
@@ -338,7 +335,7 @@ test("a bill in Beijing time counts its own 1st and is ordered by instant", () =
     rec({ name: "Mei", platform: "wechat", month: "2026-10", at: "2026-10-03T07:00:00+08:00" }),
     rec({ name: "Wen", platform: "kofi", month: "2026-10", at: "2026-10-02T23:30:00Z" }),
   ]);
-  const wall = buildWall(later.records, []);
+  const wall = buildWall(later.records);
   assert.ok(badgesOf(wall, "Mei").includes("first_of_month"));
   assert.equal(badgesOf(wall, "Wen").includes("first_of_month"), false);
 });
@@ -368,8 +365,79 @@ test("the trophy is earned once, however many months it was opened in", () => {
     rec({ name: "Wen", month: "2026-10", at: "2026-10-01T01:00:00Z" }),
     rec({ name: "Wen", month: "2026-11", at: "2026-11-01T01:00:00Z" }),
   ]);
-  const [card] = buildWall(records, []);
+  const [card] = buildWall(records);
   assert.equal(card.badges.filter((b) => b === "first_of_month").length, 1);
   // Catalog order keeps it after the older trophies.
   assert.deepEqual(card.badges, ["first_light", "first_of_month"]);
+});
+
+// R-DON.14: the wall is ranked by what each person gave in total, and the
+// total itself never leaves cards.mjs.
+
+test("the wall is ordered by total given, and place counts from 1", () => {
+  const wall = buildWall([
+    rec({ name: "Small", usd: 5 }),
+    rec({ name: "Big", usd: 30 }),
+    rec({ name: "Mid", platform: "kofi", usd: 5 }),
+    rec({ name: "mid", platform: "wechat", month: "2026-09", usd: 7 }),
+  ]);
+  assert.deepEqual(wall.map((c) => c.name), ["Big", "Mid", "Small"]);
+  assert.deepEqual(wall.map((c) => c.place), [1, 2, 3]);
+});
+
+test("a tie goes to more months, then the earlier month, then the name", () => {
+  const wall = buildWall([
+    rec({ name: "Zed", month: "2026-07", usd: 5 }),
+    rec({ name: "bob", month: "2026-08", usd: 5 }),
+    rec({ name: "Amy", month: "2026-08", usd: 5 }),
+    rec({ name: "Two", month: "2026-08", usd: 2.5 }),
+    rec({ name: "Two", month: "2026-09", usd: 2.5 }),
+  ]);
+  assert.deepEqual(wall.map((c) => c.name), ["Two", "Zed", "Amy", "bob"]);
+});
+
+test("bands step at $10, $25, $50 and $100, read in whole cents", () => {
+  assert.deepEqual(
+    BANDS.map((b) => b.id),
+    ["bronze", "silver", "gold", "platinum", "diamond"],
+  );
+  assert.equal(bandFor(0.15), "bronze");
+  assert.equal(bandFor(9.99), "bronze");
+  assert.equal(bandFor(10), "silver");
+  assert.equal(bandFor(24.99), "silver");
+  assert.equal(bandFor(25), "gold");
+  assert.equal(bandFor(50), "platinum");
+  assert.equal(bandFor(99.99), "platinum");
+  assert.equal(bandFor(100), "diamond");
+  assert.equal(bandFor(5000), "diamond");
+  // A total a float's width under a step still reaches it.
+  assert.equal(bandFor(10 - 1e-9), "silver");
+});
+
+test("a card's band follows the person's total across every rail", () => {
+  const [card] = buildWall([
+    rec({ name: "Wen", platform: "kofi", usd: 5 }),
+    rec({ name: "wen", platform: "alipay", month: "2026-09", usd: 80 / 6.7179 }),
+  ]);
+  assert.equal(card.band, "silver");
+  assert.deepEqual(card.rails, ["alipay", "kofi"]);
+});
+
+test("no supporter row carries an amount", () => {
+  const wall = buildWall([
+    rec({ name: "Big", usd: 120 }),
+    rec({ name: "Small", usd: 1, recurring: true }),
+  ]);
+  for (const card of wall) {
+    for (const key of Object.keys(card)) {
+      assert.equal(/usd|amount|total|sum/i.test(key), false, `row carries ${key}`);
+    }
+    assert.equal(JSON.stringify(card).includes("120"), false, "the total leaked into a row");
+  }
+});
+
+test("first_light reads Backer and two_rails reads Multi-platform", () => {
+  const byId = new Map(ACHIEVEMENTS.map((a) => [a.id, a]));
+  assert.equal(byId.get("first_light").label, "Backer");
+  assert.equal(byId.get("two_rails").label, "Multi-platform");
 });
