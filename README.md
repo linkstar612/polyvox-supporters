@@ -277,9 +277,15 @@ The entry it writes:
   name: a string starting with `*` (the bill's masked payer), a six-digit run
   (phone, account) or a handle. `--goal` picks the bar; every rail defaults to
   `living`.
+- **A donation code in the memo goes in `note`, never in `name`.** The app shows
+  the payer a code (`PV-` and six characters) to type after their name, and
+  `cards.mjs` reads it from `note` to unlock the card's trophies in the app that
+  made it. `ledger-append.mjs` drops `note`, so add it by hand once
+  `cn-record.mjs` has written the entry (`alipay:2026-09-27-2008-80.00` is the
+  first one).
 - **Never put a WeChat ID, an Alipay account, a phone number or memo text that
-  is not the chosen name in this file.** It is world-readable and mirrored by
-  anyone who cloned it.
+  is not the chosen name or a donation code in this file.** It is world-readable
+  and mirrored by anyone who cloned it.
 
 给 アたる 的说明（可直接转发）：
 

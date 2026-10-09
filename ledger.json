@@ -119,6 +119,19 @@
       "link": "",
       "recurring": false,
       "at": "2026-10-06T01:52:37.000Z"
+    },
+    {
+      "id": "alipay:2026-09-27-2008-80.00",
+      "platform": "alipay",
+      "month": "2026-09",
+      "amount": 80,
+      "currency": "CNY",
+      "goal": "living",
+      "name": "我心态很差",
+      "link": "",
+      "recurring": false,
+      "at": "2026-09-27T20:08:00+08:00",
+      "note": "Personal Alipay collection code, bill line forwarded 2026-10-09. Memo was the existing wall name plus the app's donation code PV-C3WDTO, which unlocks this card's trophies in that install."
     }
   ]
 }
