@@ -1,6 +1,6 @@
 {
   "schema": 1,
-  "updated_at": "2026-10-11T01:50:36.324Z",
+  "updated_at": "2026-10-11T08:46:21.308Z",
   "cn_alipay_url": "https://qr.alipay.com/fkx14384xioygstaelud788",
   "cn_wechat_url": "wxp://f2f0A9cBJGuK35Q_ORclkPEoLvRnarv0-O2anGVzEJLjtSwbjkkQTDjez35EAkqVZ_qV",
   "goals": [
@@ -8,7 +8,7 @@
       "id": "living",
       "kind": "monthly",
       "target_usd": 500,
-      "current_usd": 5,
+      "current_usd": 15,
       "fund_url": "https://buy.stripe.com/14A7sM9Sa3Shf1O2yr1Nu00",
       "fund_monthly_url": "https://buy.stripe.com/aFa14o7K260pcTGb4X1Nu0e"
     }
@@ -452,10 +452,10 @@
     }
   ],
   "unlocks": {
-    "31ce220eefb7e6e2c5c97057ddc624b94c334639d486e8be79fcf7a1ed534f46": [
+    "820c2133ffe0582ab57faba6ea8dcb00ce12b30011cbdcdead3c75c266aaac2f": [
       "first_light"
     ],
-    "820c2133ffe0582ab57faba6ea8dcb00ce12b30011cbdcdead3c75c266aaac2f": [
+    "31ce220eefb7e6e2c5c97057ddc624b94c334639d486e8be79fcf7a1ed534f46": [
       "first_light"
     ],
     "90ffaeb4df2da962502ce266a47578fd8065fc9ab70da1f56b052f688cdb311a": [
