@@ -128,6 +128,34 @@ inside `cards.mjs`, and `test/cards.test.mjs` fails if a row ever carries one.
 There is no founder trophy and no founders list; every card comes from a
 payment.
 
+## A supporter's own card edit (R-OJJ.11)
+
+A supporter can set a display name, a tagline, an accent, a background and a
+VRChat profile picture on their own card from inside Polyvox. The app POSTs to
+the doorman's `/card` route (`worker/card-route.js`) with the install's
+license file as the proof.
+
+**Why the license and not the donation code.** The `PV-` code is 30 bits.
+`manifest.unlocks` publishes SHA-256 of every code, which inverts by trying
+all 2^30 in seconds, and a code typed into a payment memo sits in
+`ledger.json` in plain text. So the route verifies the license's Ed25519
+signature against the two keys every build ships, refuses the transferable
+license (it is in every binary), and derives the code itself. The license is
+never stored or forwarded.
+
+What it writes. `card-edits.json`, through the contents API with the doorman's
+`GH_TOKEN`, keyed by SHA-256 of the code (the same key `manifest.unlocks`
+uses), holding only the chosen fields and a time. That push runs the
+aggregator, which merges the edit onto the card the code names
+(`applyCardEdits` in `cards.mjs`, every field checked again with
+`card-edit.mjs`). A code names a card when exactly one named payment carried
+it; the hashes that do are published as `manifest.card_codes`, and the preset
+lists as `manifest.card_presets`. One edit per code every 10 minutes.
+
+To revert a card, add its name (as paid or as edited) or its key to
+`overrides.json` -> `card_edit_reverts`. The supporter can clear their own
+edit with `{"clear": true}`.
+
 ## One-time setup
 
 1. **Restricted Stripe key** — Dashboard → Developers → API keys → *Create

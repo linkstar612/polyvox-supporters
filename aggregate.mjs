@@ -45,7 +45,10 @@ import {
   mergeTesters,
   resolveBands,
   updateEarned,
+  applyCardEdits,
+  cardCodes,
 } from "./cards.mjs";
+import { CARD_PRESETS } from "./card-edit.mjs";
 
 const BANDS_EARNED_COMMENT =
   "The highest band each supporter has reached, keyed by the case-folded card name, at the thresholds in force when they reached it (R-OJJ.10). aggregate.mjs reads it, shows the higher of this and today's band, and writes it back; an entry is never removed by a run, so a later rise in overrides.json -> bands never lowers anybody already on a band. Editing an entry by hand is how the owner corrects one (a refund, a merge).";
@@ -347,6 +350,20 @@ const testers = mergeTesters({
   onWall: manifest.supporters.map((s) => s.name),
 });
 if (testers.length || Array.isArray(manifest.testers)) manifest.testers = testers;
+
+// R-OJJ.11: supporters' own card edits, last, so a new display name changes
+// what a card reads and nothing keyed on its name. `card_codes` lists the code
+// hashes that name exactly one card, which is what the doorman's POST /card
+// checks before it accepts an edit; it says nothing about which card.
+const owners = cardCodes(records);
+manifest.card_codes = [...owners.keys()].sort();
+manifest.card_presets = CARD_PRESETS;
+const cardEdits = await read("card-edits.json", { edits: {} });
+manifest.supporters = applyCardEdits(manifest.supporters, {
+  edits: cardEdits.edits ?? {},
+  owners,
+  reverts: overrides.card_edit_reverts ?? [],
+});
 
 // The custom-amount minter (worker/donate) is published on the Stripe link
 // only while it answers /health: the app draws its amount field off

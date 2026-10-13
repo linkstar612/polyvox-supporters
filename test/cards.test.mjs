@@ -29,6 +29,8 @@ import {
   higherBand,
   resolveBands,
   updateEarned,
+  applyCardEdits,
+  cardCodes,
 } from "../cards.mjs";
 
 const rec = (over) => ({
@@ -566,4 +568,62 @@ test("a band only ever rises in the record, and an unknown id is ignored", () =>
   assert.deepEqual(next.kai, { band: "platinum", since: "2026-10" });
   assert.deepEqual(next.odd, { band: "bronze", since: "2026-10" });
   assert.equal(higherBand("diamond", "silver"), "diamond");
+});
+
+// --- R-OJJ.11: a supporter's own card edit ----------------------------------
+
+test("card_codes names only codes carried by exactly one card", () => {
+  const records = [
+    rec({ name: "Mei", note: "PV-AAAAAA" }),
+    rec({ name: "", note: "PV-BBBBBB" }),
+    rec({ name: "Two", note: "PV-CCCCCC" }),
+    rec({ name: "Names", note: "PV-CCCCCC" }),
+  ];
+  const owners = cardCodes(records);
+  assert.deepEqual([...owners.entries()], [[hashCode("PV-AAAAAA"), "mei"]]);
+});
+
+test("an edit merges onto its card, checked again, and the owner can revert it", () => {
+  const records = [rec({ name: "Mei", note: "PV-AAAAAA", usd: 30 }), rec({ name: "Bo", usd: 5 })];
+  const wall = buildWall(records);
+  const owners = cardCodes(records);
+  const key = hashCode("PV-AAAAAA");
+  const edits = {
+    [key]: {
+      name: "Meimei",
+      tagline: "hello",
+      accent: "sky",
+      background: "ocean",
+      avatar_url: "https://evil.example/x.png",
+      at: "2026-10-13T00:00:00Z",
+    },
+    [hashCode("PV-ZZZZZZ")]: { name: "Nobody" },
+  };
+  const out = applyCardEdits(wall, { edits, owners });
+  const mei = out.find((c) => c.place === 1);
+  assert.equal(mei.name, "Meimei");
+  assert.equal(mei.tagline, "hello");
+  assert.equal(mei.accent, "sky");
+  assert.equal(mei.background, "ocean");
+  // Off VRChat's hosts: that one field is dropped, the rest of the edit stays.
+  assert.equal("avatar_url" in mei, false);
+  assert.equal(mei.band, "gold");
+  assert.equal(out.find((c) => c.place === 2).name, "Bo");
+  assert.equal(wall[0].name, "Mei", "the input is not mutated");
+
+  for (const reverts of [["Mei"], ["meimei"], [key.toUpperCase()]]) {
+    assert.deepEqual(applyCardEdits(wall, { edits, owners, reverts }), wall, String(reverts));
+  }
+});
+
+test("an edit cannot take another card's name", () => {
+  const records = [rec({ name: "Mei", note: "PV-AAAAAA" }), rec({ name: "Bo" })];
+  const wall = buildWall(records);
+  const out = applyCardEdits(wall, {
+    edits: { [hashCode("PV-AAAAAA")]: { name: "bo", accent: "rose" } },
+    owners: cardCodes(records),
+  });
+  const names = out.map((c) => c.name).sort();
+  assert.deepEqual(names, ["Bo", "Mei"]);
+  assert.equal(out.find((c) => c.name === "Mei").accent, "rose");
 });

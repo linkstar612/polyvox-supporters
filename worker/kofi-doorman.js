@@ -31,14 +31,24 @@
 // `/stripe` is a second door, for Stripe's webhook (see `stripeDoorbell`). It
 // needs one more secret, STRIPE_WEBHOOK_SECRET: the endpoint's `whsec_…`
 // signing secret from Stripe → Developers → Webhooks.
+//
+// `/card` is the third (R-OJJ.11): a supporter's own edit to their own card,
+// proven by their license file. It needs no new secret; see card-route.js.
+
+import { handleCard } from "./card-route.js";
 
 export default {
   async fetch(request, env) {
     if (request.method !== "POST") {
       return new Response("ko-fi doorman", { status: 405 });
     }
-    if (new URL(request.url).pathname === "/stripe") {
+    const path = new URL(request.url).pathname;
+    if (path === "/stripe") {
       return stripeDoorbell(request, env);
+    }
+    // Routed before the Ko-fi branch, which reads every other POST as a form.
+    if (path === "/card") {
+      return handleCard(request, env);
     }
 
     let event;

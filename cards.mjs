@@ -26,6 +26,8 @@
 
 import { createHash } from "node:crypto";
 
+import { checkEdit } from "./card-edit.mjs";
+
 /// Every trophy the wall can show. `color` is the trophy's own, not the card's.
 /// Ids are permanent: unlock rows and installed apps key on them, so a trophy
 /// is renamed through its label (first_light reads "Backer" and two_rails
@@ -449,6 +451,73 @@ export function linkByCode(records) {
     if (String(r?.name ?? "").trim()) return r;
     const names = named.get(codeFrom(r));
     return names?.size === 1 ? { ...r, name: [...names.values()][0] } : r;
+  });
+}
+
+/// Which card each donation code names, keyed by the code's hash (R-OJJ.11).
+///
+/// The same rule as `linkByCode`: a code carried by a named payment names that
+/// card, and a code that has carried two different names names none. Run on
+/// the records after `linkByCode`. The keys are published as
+/// `manifest.card_codes`, which tells the doorman a code may edit a card and
+/// says nothing about which: the names stay in this function.
+export function cardCodes(records) {
+  const names = new Map();
+  for (const r of records ?? []) {
+    const name = String(r?.name ?? "").trim();
+    const code = name ? codeFrom(r) : "";
+    if (!code) continue;
+    const set = names.get(code) ?? new Set();
+    set.add(fold(name));
+    names.set(code, set);
+  }
+  const out = new Map();
+  for (const [code, set] of names) if (set.size === 1) out.set(hashCode(code), [...set][0]);
+  return out;
+}
+
+/// The fields a card edit can carry, in the order card-edit.mjs checks them.
+const EDIT_FIELDS = ["name", "tagline", "accent", "background", "avatar_url"];
+
+/// The wall with each supporter's own edit applied (R-OJJ.11).
+///
+/// `edits` is card-edits.json -> `edits`, keyed by code hash; `owners` is
+/// `cardCodes`. Every field is checked again with the Worker's own rules
+/// (card-edit.mjs), so a hand edit to the file cannot put anything on the wall
+/// the editor could not. `reverts` is overrides.json -> `card_edit_reverts`:
+/// a card name (as the ledger has it, or as edited) or a code hash, case-folded,
+/// and an edit it matches is ignored, which is how the owner undoes one.
+///
+/// Applied last, after the bands, the unlocks and the tester merge, so a new
+/// display name changes what the card reads and nothing that is keyed on the
+/// name. A display name another card already uses is ignored. Returns new
+/// cards; the input is never mutated.
+export function applyCardEdits(cards, { edits = {}, owners = new Map(), reverts = [] } = {}) {
+  const struck = new Set((reverts ?? []).map((r) => fold(r)));
+  const byOwner = new Map();
+  for (const [hash, raw] of Object.entries(edits ?? {})) {
+    const owner = owners.get(hash);
+    if (!owner || struck.has(fold(hash))) continue;
+    // Field by field, so one bad value drops that field and keeps the rest.
+    const edit = {};
+    for (const f of EDIT_FIELDS) Object.assign(edit, checkEdit({ [f]: raw?.[f] }).edit ?? {});
+    byOwner.set(owner, edit);
+  }
+  if (!byOwner.size) return cards ?? [];
+  const taken = new Set((cards ?? []).map((c) => fold(c?.name)));
+  return (cards ?? []).map((c) => {
+    const key = fold(c?.name);
+    const edit = byOwner.get(key);
+    if (!edit || struck.has(key) || (edit.name && struck.has(fold(edit.name)))) return c;
+    const out = { ...c };
+    if (edit.name && (fold(edit.name) === key || !taken.has(fold(edit.name)))) {
+      out.name = edit.name;
+      taken.add(fold(edit.name));
+    }
+    for (const f of EDIT_FIELDS.slice(1)) {
+      if (edit[f]) out[f] = edit[f];
+    }
+    return out;
   });
 }
 
