@@ -27,11 +27,18 @@
 // The dashboard route still works if you prefer it — Workers & Pages → Create →
 // Worker, paste this file, add the three under Settings → Variables as SECRETS
 // (not plaintext vars).
+//
+// `/stripe` is a second door, for Stripe's webhook (see `stripeDoorbell`). It
+// needs one more secret, STRIPE_WEBHOOK_SECRET: the endpoint's `whsec_…`
+// signing secret from Stripe → Developers → Webhooks.
 
 export default {
   async fetch(request, env) {
     if (request.method !== "POST") {
       return new Response("ko-fi doorman", { status: 405 });
+    }
+    if (new URL(request.url).pathname === "/stripe") {
+      return stripeDoorbell(request, env);
     }
 
     let event;
@@ -122,6 +129,100 @@ export default {
     ctx.waitUntil(recordTokenHealth(env));
   },
 };
+
+// --- Stripe: a doorbell, not a delivery --------------------------------------
+//
+// The aggregator polls Stripe on a cron that the free tier runs 3 to 10 hours
+// apart, so a paid tip used to wait that long for the wall. Stripe's webhook
+// rings here instead and the aggregator runs within a minute or two.
+//
+// Nothing from the event is forwarded. The aggregator re-reads Stripe with its
+// own read-only key, so the dispatch carries only its type. The event body
+// holds the donor's email and name; it is read here to check Stripe's
+// signature and its `type`, and goes no further.
+
+const STRIPE_EVENTS = new Set([
+  "checkout.session.completed",
+  "checkout.session.async_payment_succeeded",
+  "invoice.paid",
+]);
+
+// Stripe's own default. A resent event is signed afresh, so this never
+// rejects a redelivery, only a captured request replayed later.
+const STRIPE_TOLERANCE_S = 300;
+
+async function stripeDoorbell(request, env) {
+  // Same reasoning as KOFI_TOKEN above: a 503 makes Stripe retry, so a URL
+  // registered before its secret loses nothing.
+  if (!env.STRIPE_WEBHOOK_SECRET) {
+    return new Response("doorman not configured", { status: 503 });
+  }
+  const body = await request.text();
+  const signed = await stripeSigned(
+    body,
+    request.headers.get("stripe-signature") ?? "",
+    env.STRIPE_WEBHOOK_SECRET,
+  );
+  if (!signed) return new Response("bad signature", { status: 400 });
+
+  let type;
+  try {
+    type = JSON.parse(body).type;
+  } catch {
+    return new Response("bad payload", { status: 400 });
+  }
+  if (!STRIPE_EVENTS.has(type)) return new Response("ok", { status: 200 });
+
+  const res = await fetch(`https://api.github.com/repos/${env.GH_REPO}/dispatches`, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${env.GH_TOKEN}`,
+      Accept: "application/vnd.github+json",
+      "Content-Type": "application/json",
+      "User-Agent": "polyvox-kofi-doorman",
+    },
+    body: JSON.stringify({ event_type: "stripe-payment" }),
+  });
+  // Stripe retries a non-2xx for three days, and an extra aggregator run is
+  // harmless, so a failed dispatch is surfaced rather than swallowed.
+  if (!res.ok) {
+    return new Response(`dispatch failed: ${res.status}`, { status: 502 });
+  }
+  return new Response("ok", { status: 200 });
+}
+
+/** Stripe's v1 signature: the header is `t=<unix>,v1=<hex>[,v1=<hex>…]`, each
+ *  `v1` an HMAC-SHA256 of `${t}.${body}` under the endpoint secret. Several
+ *  `v1` entries appear while a secret is being rolled; any one matching is
+ *  enough. Exported for the tests. */
+export async function stripeSigned(body, header, secret, now = Date.now()) {
+  const fields = header.split(",").map((f) => f.trim().split("="));
+  const t = fields.find(([k]) => k === "t")?.[1];
+  const sigs = fields.filter(([k]) => k === "v1").map(([, v]) => v ?? "");
+  if (!t || !sigs.length) return false;
+  if (!(Math.abs(now / 1000 - Number(t)) <= STRIPE_TOLERANCE_S)) return false;
+
+  const enc = new TextEncoder();
+  const key = await crypto.subtle.importKey(
+    "raw",
+    enc.encode(secret),
+    { name: "HMAC", hash: "SHA-256" },
+    false,
+    ["sign"],
+  );
+  const mac = new Uint8Array(await crypto.subtle.sign("HMAC", key, enc.encode(`${t}.${body}`)));
+  const want = [...mac].map((b) => b.toString(16).padStart(2, "0")).join("");
+  return sigs.some((s) => sameText(s, want));
+}
+
+// Compares every character whatever it finds, so the time taken says nothing
+// about how much of a forged signature was right.
+function sameText(a, b) {
+  if (a.length !== b.length) return false;
+  let diff = 0;
+  for (let i = 0; i < a.length; i += 1) diff |= a.charCodeAt(i) ^ b.charCodeAt(i);
+  return diff === 0;
+}
 
 const STATUS_PATH = "worker-status.json";
 

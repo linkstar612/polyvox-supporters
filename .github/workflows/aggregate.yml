@@ -1,15 +1,24 @@
 name: aggregate-supporters
 
-# Rebuild manifest.json's goal totals + supporter wall. Three triggers:
-#   repository_dispatch — the Ko-fi doorman Worker, seconds after a donation
-#   schedule            — catches Stripe, which nothing pushes to us
+# Rebuild manifest.json's goal totals + supporter wall. Four triggers:
+#   repository_dispatch — the doorman Worker, seconds after a donation:
+#                         `kofi-donation` carries a ledger entry, `stripe-payment`
+#                         carries nothing and only says "poll Stripe now"
+#   push                — a hand edit to the ledger, the overrides or the
+#                         scripts publishes at once instead of on the next cron
+#   schedule            — the backstop for anything a webhook missed
 #   workflow_dispatch   — the "run it now" button
 #
-# Cron is best-effort on the free tier (often 10-45 min late), which is fine
-# for a goal bar; the Ko-fi path does not wait on it.
+# Cron is best-effort on the free tier and lands 3 to 10 hours apart, which is
+# why neither donation path waits on it. The bot's own commits are pushed with
+# GITHUB_TOKEN, which GitHub never lets trigger another run, so `push` cannot
+# loop.
 on:
   repository_dispatch:
-    types: [kofi-donation]
+    types: [kofi-donation, stripe-payment]
+  push:
+    branches: [main]
+    paths: [ledger.json, overrides.json, "*.mjs"]
   schedule:
     - cron: "17,47 * * * *" # ~2x/hour, off :00/:30 to dodge the scheduler herd
   workflow_dispatch: {}
@@ -61,14 +70,16 @@ jobs:
           # value as the Worker's ADMIN_TOKEN secret. Unset leaves
           # manifest.testers exactly as the last good run wrote it.
           MINT_ADMIN_TOKEN: ${{ secrets.MINT_ADMIN_TOKEN }}
-          IS_DISPATCH: ${{ github.event_name == 'repository_dispatch' }}
+          # Only a Ko-fi dispatch carries a ledger entry. A `stripe-payment`
+          # one has no payload, and ledger-append must never see it.
+          IS_KOFI: ${{ github.event_name == 'repository_dispatch' && github.event.action == 'kofi-donation' }}
           LEDGER_ENTRY: ${{ toJSON(github.event.client_payload) }}
         run: |
           git config user.name "supporters-bot"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
 
           for attempt in 1 2 3 4 5; do
-            if [ "$IS_DISPATCH" = "true" ]; then node ledger-append.mjs; fi
+            if [ "$IS_KOFI" = "true" ]; then node ledger-append.mjs; fi
             node aggregate.mjs
 
             git add manifest.json ledger.json wall-pending.json

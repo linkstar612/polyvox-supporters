@@ -40,6 +40,7 @@ import {
   buildUnlocks,
   buildWall,
   fold,
+  linkByCode,
   markFirstOfMonth,
   mergeTesters,
 } from "./cards.mjs";
@@ -173,20 +174,24 @@ if (key) {
 // The first-of-the-month trophy is marked on the records themselves, after the
 // aliases, so it rides into the wall and the unlocks with everything else.
 const { records, untimed } = markFirstOfMonth(
-  applyAliases(
-    [
-      ...stripeRecords,
-      ...ledger.entries,
-      ...afdianEntries,
-    ].map((e) => ({
-      ...e,
-      usd: toUsd(Number(e.amount ?? 0), e.currency, fx),
-      goal: e.goal ?? DEFAULT_GOAL,
-    })),
-    // overrides.json -> aliases: a name a live rail delivered, folded onto the
-    // card it belongs to. Applied at the source so the wall and the unlocks
-    // agree on who a coded donation was from.
-    overrides.aliases ?? {},
+  // A blank-name payment carrying a donation code that already names a card
+  // joins that card (cards.mjs). After the aliases, so the merged name carries.
+  linkByCode(
+    applyAliases(
+      [
+        ...stripeRecords,
+        ...ledger.entries,
+        ...afdianEntries,
+      ].map((e) => ({
+        ...e,
+        usd: toUsd(Number(e.amount ?? 0), e.currency, fx),
+        goal: e.goal ?? DEFAULT_GOAL,
+      })),
+      // overrides.json -> aliases: a name a live rail delivered, folded onto the
+      // card it belongs to. Applied at the source so the wall and the unlocks
+      // agree on who a coded donation was from.
+      overrides.aliases ?? {},
+    ),
   ),
 );
 // An Afdian order is anonymous by design (afdian.mjs) and its sponsor row

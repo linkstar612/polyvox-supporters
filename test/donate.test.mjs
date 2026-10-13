@@ -84,6 +84,8 @@ test("sessionParams: one-time donate of exactly the cents, wall name optional", 
   assert.ok(p.get("custom_fields[0][label][custom]").length <= 50);
   assert.equal(p.get("client_reference_id"), "PV-ABCD");
   assert.equal(p.get("success_url"), `${ORIGIN}/thanks`);
+  // The bank's own check (SMS code / app prompt) whenever the card supports it.
+  assert.equal(p.get("payment_method_options[card][request_three_d_secure]"), "any");
 });
 
 test("sessionParams: no ref means no client_reference_id at all", () => {

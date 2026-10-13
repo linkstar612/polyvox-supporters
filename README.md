@@ -226,6 +226,29 @@ Both sides are case-folded. The aliased records fold onto the existing card
 unlocks that card's trophies for the install that made it. Removing the
 alias splits the cards again on the next run.
 
+### A Stripe payment with the name left blank
+
+A blank name is anonymous, with one exception that needs no edit: a payment
+made from the app's Supporters tab carries the install's donation code
+(`client_reference_id`), and when that code already carries a name on any
+rail, the payment joins that card (`linkByCode` in `cards.mjs`). A code that
+has carried two different names links nothing.
+
+A payment made from a plain `buy.stripe.com` link carries no code. When its
+donor tells you it was theirs, record it by hand with its PaymentIntent (the
+**Payment ID** on the payment's page in the dashboard) as `stripe_pi`, so the
+poller skips the anonymous session and this line counts instead:
+
+```json
+{ "id": "stripe:pi_3UPEd0…", "platform": "stripe", "month": "2026-10",
+  "at": "2026-10-11T08:44:00Z", "amount": 10, "currency": "USD",
+  "goal": "living", "name": "ATaruzzz", "link": "", "recurring": false,
+  "stripe_pi": "pi_3UPEd0…", "note": "who confirmed it, and when" }
+```
+
+The same line with `name: ""` (and no `PV-` code in `note`) keeps a coded
+payment off its card, for a donor who asks for that.
+
 ## Recording a WeChat or Alipay payment
 
 **Nothing polls these, and nothing ever will.** アたる's WeChat and Alipay

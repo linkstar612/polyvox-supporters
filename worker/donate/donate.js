@@ -86,6 +86,10 @@ export function sessionParams({ cents, ref, origin }) {
   p.set("custom_fields[0][label][custom]", NAME_FIELD_LABEL);
   p.set("custom_fields[0][type]", "text");
   p.set("custom_fields[0][optional]", "true");
+  // 3D Secure (the bank's SMS code or app prompt) on every card that supports
+  // it, not only where a bank or regulation demands it (owner decision,
+  // 2026-10-12). A card with no 3D Secure still pays.
+  p.set("payment_method_options[card][request_three_d_secure]", "any");
   p.set("success_url", `${origin}/thanks`);
   p.set("metadata[source]", "polyvox-app-custom-amount");
   if (ref) p.set("client_reference_id", ref);

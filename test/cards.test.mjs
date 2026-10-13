@@ -23,6 +23,7 @@ import {
   firstOfMonth,
   hashCode,
   levelFor,
+  linkByCode,
   markFirstOfMonth,
   mergeTesters,
 } from "../cards.mjs";
@@ -440,4 +441,60 @@ test("first_light reads Backer and two_rails reads Multi-platform", () => {
   const byId = new Map(ACHIEVEMENTS.map((a) => [a.id, a]));
   assert.equal(byId.get("first_light").label, "Backer");
   assert.equal(byId.get("two_rails").label, "Multi-platform");
+});
+
+test("a blank-name payment joins the card its donation code already named", () => {
+  const raw = [
+    rec({ name: "", platform: "stripe", month: "2026-10", usd: 10, client_reference_id: "PV-A2B3C4" }),
+    rec({ name: "Wen", platform: "stripe", month: "2026-09", usd: 30, client_reference_id: "PV-A2B3C4" }),
+  ];
+  const records = linkByCode(raw);
+  // The input is untouched.
+  assert.equal(raw[0].name, "");
+  assert.deepEqual(records.map((r) => r.name), ["Wen", "Wen"]);
+  const wall = buildWall(records);
+  assert.equal(wall.length, 1);
+  assert.deepEqual(Object.keys(wall[0].months), ["2026-09", "2026-10"]);
+  assert.equal(wall[0].level, levelFor(2));
+});
+
+test("a code carried under two names links nothing", () => {
+  const records = linkByCode([
+    rec({ name: "", client_reference_id: "PV-A2B3C4" }),
+    rec({ name: "Wen", client_reference_id: "PV-A2B3C4" }),
+    rec({ name: "Mizar", client_reference_id: "PV-A2B3C4" }),
+  ]);
+  assert.equal(records[0].name, "");
+});
+
+test("a typed name is never replaced, and a payment with no code stays anonymous", () => {
+  const records = linkByCode([
+    rec({ name: "Someone else", client_reference_id: "PV-A2B3C4" }),
+    rec({ name: "Wen", client_reference_id: "PV-A2B3C4" }),
+    rec({ name: "" }),
+  ]);
+  assert.equal(records[0].name, "Someone else");
+  assert.equal(records[2].name, "");
+});
+
+test("the name a code carries is the alias target", () => {
+  const records = linkByCode(
+    applyAliases(
+      [
+        rec({ name: "Name on Stripe", client_reference_id: "PV-A2B3C4" }),
+        rec({ name: "", note: "WeChat memo pv-a2b3c4" }),
+      ],
+      { "name on stripe": "Wen" },
+    ),
+  );
+  assert.deepEqual(records.map((r) => r.name), ["Wen", "Wen"]);
+});
+
+test("case-only differences are one name, not two", () => {
+  const records = linkByCode([
+    rec({ name: "", client_reference_id: "PV-A2B3C4" }),
+    rec({ name: "Wen", client_reference_id: "PV-A2B3C4" }),
+    rec({ name: "wen", client_reference_id: "PV-A2B3C4" }),
+  ]);
+  assert.equal(records[0].name, "Wen");
 });

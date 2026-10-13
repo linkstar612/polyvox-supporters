@@ -363,6 +363,36 @@ export function codeFrom(record) {
   return haystack.match(CODE_RE)?.[0] ?? "";
 }
 
+/// A blank-name payment joins the card its donation code already named.
+///
+/// The code comes from the donor's own license, so a returning donor who left
+/// the name field empty is still the person who typed a name last time, and no
+/// email is consulted to know it (owner decision, 2026-10-12: a $10 tip from a
+/// named supporter landed anonymous because the field was skipped). A code
+/// that has carried two different names links nothing, since either guess
+/// would put money on the wrong card. A record that carries a name keeps it.
+///
+/// Run after `applyAliases`, so the alias target is the name that carries, and
+/// before `markFirstOfMonth`, so a linked payment that opened a month earns
+/// that card the trophy. Returns new records; the input is never mutated.
+export function linkByCode(records) {
+  const named = new Map();
+  for (const r of records ?? []) {
+    const name = String(r?.name ?? "").trim();
+    const code = name ? codeFrom(r) : "";
+    if (!code) continue;
+    const names = named.get(code) ?? new Map();
+    if (!names.has(fold(name))) names.set(fold(name), name);
+    named.set(code, names);
+  }
+  if (!named.size) return records ?? [];
+  return (records ?? []).map((r) => {
+    if (String(r?.name ?? "").trim()) return r;
+    const names = named.get(codeFrom(r));
+    return names?.size === 1 ? { ...r, name: [...names.values()][0] } : r;
+  });
+}
+
 /// Which trophies each donation code has unlocked.
 ///
 /// A donation always earns `first_light` by itself, which is the point. Beyond
