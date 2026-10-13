@@ -1,6 +1,6 @@
 {
   "schema": 1,
-  "updated_at": "2026-10-13T09:15:49.231Z",
+  "updated_at": "2026-10-13T09:20:05.259Z",
   "cn_alipay_url": "https://qr.alipay.com/fkx14384xioygstaelud788",
   "cn_wechat_url": "wxp://f2f0A9cBJGuK35Q_ORclkPEoLvRnarv0-O2anGVzEJLjtSwbjkkQTDjez35EAkqVZ_qV",
   "goals": [
@@ -494,5 +494,94 @@
       "id": "diamond",
       "min_usd": 100
     }
-  ]
+  ],
+  "card_codes": [
+    "19e35a2abc45112bff62c99504c751de9dc257434f74c3800416369850965ca0",
+    "225685b2c976d787fe11310908ecb71d61bbe41ac5a38adb1d9b79391724925e",
+    "31ce220eefb7e6e2c5c97057ddc624b94c334639d486e8be79fcf7a1ed534f46",
+    "820c2133ffe0582ab57faba6ea8dcb00ce12b30011cbdcdead3c75c266aaac2f",
+    "90ffaeb4df2da962502ce266a47578fd8065fc9ab70da1f56b052f688cdb311a"
+  ],
+  "card_presets": {
+    "accents": [
+      {
+        "id": "rose",
+        "color": "#fb7185"
+      },
+      {
+        "id": "amber",
+        "color": "#fbbf24"
+      },
+      {
+        "id": "lime",
+        "color": "#a3e635"
+      },
+      {
+        "id": "emerald",
+        "color": "#34d399"
+      },
+      {
+        "id": "sky",
+        "color": "#38bdf8"
+      },
+      {
+        "id": "indigo",
+        "color": "#818cf8"
+      },
+      {
+        "id": "violet",
+        "color": "#a78bfa"
+      },
+      {
+        "id": "pink",
+        "color": "#f472b6"
+      },
+      {
+        "id": "slate",
+        "color": "#94a3b8"
+      }
+    ],
+    "backgrounds": [
+      {
+        "id": "midnight",
+        "from": "#0f172a",
+        "to": "#1e1b4b"
+      },
+      {
+        "id": "dusk",
+        "from": "#312e81",
+        "to": "#9d174d"
+      },
+      {
+        "id": "forest",
+        "from": "#052e16",
+        "to": "#166534"
+      },
+      {
+        "id": "ocean",
+        "from": "#082f49",
+        "to": "#0e7490"
+      },
+      {
+        "id": "ember",
+        "from": "#431407",
+        "to": "#9a3412"
+      },
+      {
+        "id": "plum",
+        "from": "#2e1065",
+        "to": "#6b21a8"
+      },
+      {
+        "id": "graphite",
+        "from": "#18181b",
+        "to": "#3f3f46"
+      }
+    ],
+    "limits": {
+      "name": 32,
+      "tagline": 60,
+      "avatar_url": 512
+    }
+  }
 }
