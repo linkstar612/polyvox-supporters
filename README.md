@@ -254,10 +254,10 @@ donor tells you it was theirs, record it by hand with its PaymentIntent (the
 poller skips the anonymous session and this line counts instead:
 
 ```json
-{ "id": "stripe:pi_3UPEd0…", "platform": "stripe", "month": "2026-10",
-  "at": "2026-10-11T08:44:00Z", "amount": 10, "currency": "USD",
-  "goal": "living", "name": "ATaruzzz", "link": "", "recurring": false,
-  "stripe_pi": "pi_3UPEd0…", "note": "who confirmed it, and when" }
+{ "id": "stripe:pi_3Twkkw…", "platform": "stripe", "month": "2026-07",
+  "at": "2026-07-12T21:05:00+09:00", "amount": 5, "currency": "USD",
+  "goal": "living", "name": "Alex", "link": "", "recurring": false,
+  "stripe_pi": "pi_3Twkkw…", "note": "who confirmed it, and when" }
 ```
 
 The same line with `name: ""` (and no `PV-` code in `note`) keeps a coded

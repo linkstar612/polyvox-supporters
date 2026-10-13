@@ -367,7 +367,7 @@ export function codeFrom(record) {
 ///
 /// The code comes from the donor's own license, so a returning donor who left
 /// the name field empty is still the person who typed a name last time, and no
-/// email is consulted to know it (owner decision, 2026-10-12: a $10 tip from a
+/// email is consulted to know it (owner decision, 2026-10-12: a tip from a
 /// named supporter landed anonymous because the field was skipped). A code
 /// that has carried two different names links nothing, since either guess
 /// would put money on the wrong card. A record that carries a name keeps it.
