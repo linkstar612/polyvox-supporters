@@ -1,6 +1,6 @@
 {
   "schema": 1,
-  "updated_at": "2026-10-13T08:25:50.763Z",
+  "updated_at": "2026-10-13T09:15:49.231Z",
   "cn_alipay_url": "https://qr.alipay.com/fkx14384xioygstaelud788",
   "cn_wechat_url": "wxp://f2f0A9cBJGuK35Q_ORclkPEoLvRnarv0-O2anGVzEJLjtSwbjkkQTDjez35EAkqVZ_qV",
   "goals": [
@@ -472,5 +472,27 @@
       "first_light",
       "two_rails"
     ]
-  }
+  },
+  "bands": [
+    {
+      "id": "bronze",
+      "min_usd": 0
+    },
+    {
+      "id": "silver",
+      "min_usd": 10
+    },
+    {
+      "id": "gold",
+      "min_usd": 25
+    },
+    {
+      "id": "platinum",
+      "min_usd": 50
+    },
+    {
+      "id": "diamond",
+      "min_usd": 100
+    }
+  ]
 }
