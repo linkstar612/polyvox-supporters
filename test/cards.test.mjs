@@ -26,6 +26,9 @@ import {
   linkByCode,
   markFirstOfMonth,
   mergeTesters,
+  higherBand,
+  resolveBands,
+  updateEarned,
 } from "../cards.mjs";
 
 const rec = (over) => ({
@@ -497,4 +500,70 @@ test("case-only differences are one name, not two", () => {
     rec({ name: "wen", client_reference_id: "PV-A2B3C4" }),
   ]);
   assert.equal(records[0].name, "Wen");
+});
+
+// --- R-OJJ.10: a supporter keeps the band they earned -------------------------
+
+test("thresholds come from one config value and keep their order", () => {
+  assert.deepEqual(resolveBands({}), BANDS);
+  const raised = resolveBands({ diamond: 150 });
+  assert.equal(raised.find((b) => b.id === "diamond").min_usd, 150);
+  assert.equal(raised.find((b) => b.id === "platinum").min_usd, 50);
+  // A step below the one before it, a negative and an unknown id are ignored.
+  assert.deepEqual(resolveBands({ gold: 5, silver: -1, ruby: 9 }), BANDS);
+  assert.equal(resolveBands({ bronze: 40 })[0].min_usd, 0);
+  assert.equal(bandFor(120, raised), "platinum");
+});
+
+test("raising Diamond above a supporter's total keeps them Diamond", () => {
+  const ledger = [rec({ name: "Mei", usd: 100 })];
+  const today = buildWall(ledger);
+  assert.equal(today[0].band, "diamond");
+  const earned = updateEarned({}, today, "2026-10");
+  assert.deepEqual(earned, { mei: { band: "diamond", since: "2026-10" } });
+
+  const raised = resolveBands({ diamond: 200 });
+  const later = buildWall(ledger, { bands: raised, earned });
+  assert.equal(later[0].band, "diamond");
+  // And the record does not move: they earned it in October.
+  assert.deepEqual(updateEarned(earned, later, "2026-12"), earned);
+});
+
+test("a newcomer at the same total gets the lower band", () => {
+  const raised = resolveBands({ diamond: 200 });
+  const earned = { mei: { band: "diamond", since: "2026-10" } };
+  const wall = buildWall(
+    [rec({ name: "Mei", usd: 100 }), rec({ name: "Newcomer", usd: 100, month: "2026-11" })],
+    { bands: raised, earned },
+  );
+  const byName = Object.fromEntries(wall.map((c) => [c.name, c.band]));
+  assert.deepEqual(byName, { Mei: "diamond", Newcomer: "platinum" });
+});
+
+test("earned bands survive a re-run that cannot see the donor at all", () => {
+  // Run 1 saw Stripe; run 2 had no key and dropped every Stripe donor.
+  const first = buildWall([rec({ name: "Ana", platform: "stripe", usd: 30 })]);
+  const earned = updateEarned({}, first, "2026-10");
+  const second = buildWall([rec({ name: "Bo", usd: 5 })], { earned });
+  const after = updateEarned(earned, second, "2026-10");
+  assert.deepEqual(after.ana, { band: "gold", since: "2026-10" });
+  // Run 3 sees Ana again, from an empty in-memory cache: only the file carries.
+  const third = buildWall([rec({ name: "ana", platform: "stripe", usd: 30 })], {
+    bands: resolveBands({ gold: 40 }),
+    earned: JSON.parse(JSON.stringify(after)),
+  });
+  assert.equal(third[0].band, "gold");
+});
+
+test("a band only ever rises in the record, and an unknown id is ignored", () => {
+  const earned = { kai: { band: "silver", since: "2026-08" }, odd: { band: "ruby", since: "" } };
+  const wall = buildWall([rec({ name: "Kai", usd: 60 }), rec({ name: "Odd", usd: 1 })], {
+    earned,
+  });
+  const byName = Object.fromEntries(wall.map((c) => [c.name, c.band]));
+  assert.deepEqual(byName, { Kai: "platinum", Odd: "bronze" });
+  const next = updateEarned(earned, wall, "2026-10");
+  assert.deepEqual(next.kai, { band: "platinum", since: "2026-10" });
+  assert.deepEqual(next.odd, { band: "bronze", since: "2026-10" });
+  assert.equal(higherBand("diamond", "silver"), "diamond");
 });

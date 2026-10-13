@@ -18,7 +18,7 @@ on:
     types: [kofi-donation, stripe-payment]
   push:
     branches: [main]
-    paths: [ledger.json, overrides.json, "*.mjs"]
+    paths: [ledger.json, overrides.json, bands-earned.json, card-edits.json, "*.mjs"]
   schedule:
     - cron: "17,47 * * * *" # ~2x/hour, off :00/:30 to dodge the scheduler herd
   workflow_dispatch: {}
@@ -82,7 +82,7 @@ jobs:
             if [ "$IS_KOFI" = "true" ]; then node ledger-append.mjs; fi
             node aggregate.mjs
 
-            git add manifest.json ledger.json wall-pending.json
+            git add manifest.json ledger.json wall-pending.json bands-earned.json
             if git diff --cached --quiet; then
               echo "Nothing changed — already published by another run."
               exit 0

@@ -43,7 +43,12 @@ import {
   linkByCode,
   markFirstOfMonth,
   mergeTesters,
+  resolveBands,
+  updateEarned,
 } from "./cards.mjs";
+
+const BANDS_EARNED_COMMENT =
+  "The highest band each supporter has reached, keyed by the case-folded card name, at the thresholds in force when they reached it (R-OJJ.10). aggregate.mjs reads it, shows the higher of this and today's band, and writes it back; an entry is never removed by a run, so a later rise in overrides.json -> bands never lowers anybody already on a band. Editing an entry by hand is how the owner corrects one (a refund, a merge).";
 import { goalTotal } from "./goals.mjs";
 import { stripeRenewals, stripeSessions } from "./stripe.mjs";
 import { partitionTesters } from "./wall.mjs";
@@ -283,7 +288,14 @@ if (!mintToken) {
 const prealpha = new Set((overrides.badges?.prealpha ?? []).map((n) => fold(n)));
 const eras = new Map(mintTesters.map((t) => [fold(t?.name), String(t?.badge ?? "")]));
 
+// R-OJJ.10: the band steps are one owner-edited value (overrides.json ->
+// `bands`), and the band each supporter already reached lives in
+// bands-earned.json, so raising a step never lowers anybody already on it.
+const bands = resolveBands(overrides.bands ?? {});
+const earnedFile = await read("bands-earned.json", { earned: {} });
+
 manifest.achievements = ACHIEVEMENTS;
+manifest.bands = bands;
 manifest.supporters = buildWall(
   [...records, ...applyAliases(afdianWall, overrides.aliases ?? {})],
   {
@@ -291,7 +303,35 @@ manifest.supporters = buildWall(
   prealpha,
   eras,
   cardStyles: overrides.card_styles ?? {},
+  bands,
+  earned: earnedFile.earned ?? {},
 });
+const earnedNext = updateEarned(
+  earnedFile.earned ?? {},
+  manifest.supporters,
+  new Date().toISOString().slice(0, 7),
+);
+// The dry-run line for a threshold change: every card the earned record holds
+// above what today's steps alone would give it. Empty while the steps are the
+// ones every band was earned under.
+const held = manifest.supporters.filter(
+  (s) => s.band !== (buildWall(records.filter((r) => fold(r.name) === fold(s.name)), { bands })[0]?.band ?? bands[0].id),
+);
+console.log(
+  `Bands: ${bands.map((b) => `${b.id}>=${b.min_usd}`).join(" ")}; held by an earned band: ` +
+    (held.map((s) => `${s.name}=${s.band}`).join(", ") || "none"),
+);
+await writeFile(
+  "bands-earned.json",
+  `${JSON.stringify(
+    {
+      _comment: BANDS_EARNED_COMMENT,
+      earned: earnedNext,
+    },
+    null,
+    2,
+  )}\n`,
+);
 
 // A donation that carried the app's code unlocks its trophies for that
 // install. Only the hash of the code is published: the file names nobody, and

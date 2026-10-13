@@ -1,0 +1,57 @@
+{
+  "_comment": "The highest band each supporter has reached, keyed by the case-folded card name, at the thresholds in force when they reached it (R-OJJ.10). aggregate.mjs reads it, shows the higher of this and today's band, and writes it back; an entry is never removed by a run, so a later rise in overrides.json -> bands never lowers anybody already on a band. Editing an entry by hand is how the owner corrects one (a refund, a merge).",
+  "earned": {
+    "amber": {
+      "band": "bronze",
+      "since": "2026-10"
+    },
+    "ataruzzz": {
+      "band": "gold",
+      "since": "2026-10"
+    },
+    "dragon_yars": {
+      "band": "bronze",
+      "since": "2026-10"
+    },
+    "emo艺术家": {
+      "band": "bronze",
+      "since": "2026-10"
+    },
+    "flizee": {
+      "band": "silver",
+      "since": "2026-10"
+    },
+    "kuronosuke": {
+      "band": "platinum",
+      "since": "2026-10"
+    },
+    "loki": {
+      "band": "bronze",
+      "since": "2026-10"
+    },
+    "mizar": {
+      "band": "bronze",
+      "since": "2026-10"
+    },
+    "somebody": {
+      "band": "bronze",
+      "since": "2026-10"
+    },
+    "wardowardo": {
+      "band": "bronze",
+      "since": "2026-10"
+    },
+    "yasha": {
+      "band": "bronze",
+      "since": "2026-10"
+    },
+    "我心态很差": {
+      "band": "silver",
+      "since": "2026-10"
+    },
+    "灯灯": {
+      "band": "gold",
+      "since": "2026-10"
+    }
+  }
+}

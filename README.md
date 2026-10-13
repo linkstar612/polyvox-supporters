@@ -108,6 +108,20 @@ Play's tiers, which the app draws as materials:
 | platinum | $50 |
 | diamond | $100 |
 
+These are the defaults. The steps the wall uses are `overrides.json` ->
+`bands` (R-OJJ.10), one map the owner edits, for example `"diamond": 150`;
+a band left out keeps its default, and a step below the one before it is
+ignored. The resolved steps are published as `manifest.bands` so the app's
+legend follows them.
+
+A band once reached is kept. `bands-earned.json` records the highest band each
+supporter reached at the steps in force at the time, keyed by the case-folded
+card name, and the wall shows the higher of that and today's band. A run never
+removes an entry, so raising Diamond later leaves everybody already on Diamond
+there, while a newcomer at the same total gets the lower band. Each run logs
+the cards held up by an earned band (`held by an earned band: none` means
+today's steps alone give every card its band). To correct one, edit its entry.
+
 No amount is published: the order and the band show a range, the figure stays
 inside `cards.mjs`, and `test/cards.test.mjs` fails if a row ever carries one.
 `level` (months supported) stays on every card for apps from before the band.

@@ -14,8 +14,10 @@
 //   place    1 for whoever has given the most in total, then down the wall
 //            (R-DON.14). The supporters array is published in this order.
 //   band     bronze, silver, gold, platinum or diamond, from that same total
-//            (`BANDS`). The order and the band show a range; the total itself
-//            never reaches this file.
+//            (`BANDS`, moved by overrides.json -> `bands`). A band once earned
+//            is kept in bands-earned.json, so a raised step never lowers a
+//            card (R-OJJ.10). The order and the band show a range; the total
+//            itself never reaches this file.
 //   badges   trophy ids from manifest.achievements. The first donation earns
 //            one by itself, which is the point: a wall you can join.
 //
@@ -123,13 +125,63 @@ export const BANDS = [
 /// paid to reach rather than a float's width under it.
 const cents = (usd) => Math.round((Number(usd) || 0) * 100);
 
-/// The highest band a total reaches. Everybody on the wall gave something, so
-/// the floor is bronze.
-export function bandFor(usd) {
+/// The thresholds in force, from `overrides.json` -> `bands` (R-OJJ.10).
+///
+/// That map is the one value the owner edits to move a step, for example
+/// `{ "diamond": 150 }`. A band it leaves out keeps its default from `BANDS`;
+/// an unknown id, a negative number or a step that would sit below the one
+/// before it is ignored, so a typo can never reorder the bands. Bronze is the
+/// floor and always starts at 0.
+export function resolveBands(config = {}) {
+  let floor = 0;
+  return BANDS.map((b, i) => {
+    const asked = Number(config?.[b.id]);
+    const min = i === 0 ? 0 : Number.isFinite(asked) && asked >= floor ? asked : Math.max(b.min_usd, floor);
+    floor = min;
+    return { id: b.id, min_usd: min };
+  });
+}
+
+/// The highest band a total reaches under `bands` (today's, by default).
+/// Everybody on the wall gave something, so the floor is bronze.
+export function bandFor(usd, bands = BANDS) {
   const c = cents(usd);
-  let band = BANDS[0].id;
-  for (const b of BANDS) if (c >= b.min_usd * 100) band = b.id;
+  let band = bands[0].id;
+  for (const b of bands) if (c >= Math.round(b.min_usd * 100)) band = b.id;
   return band;
+}
+
+const BAND_RANK = new Map(BANDS.map((b, i) => [b.id, i]));
+
+/// The higher of two band ids. An id that is not a band ranks below bronze, so
+/// a hand edit that misspells one cannot lift or sink anybody.
+export function higherBand(a, b) {
+  const ra = BAND_RANK.get(a) ?? -1;
+  const rb = BAND_RANK.get(b) ?? -1;
+  if (ra < 0 && rb < 0) return BANDS[0].id;
+  return ra >= rb ? a : b;
+}
+
+/// The earned-band record after this run (R-OJJ.10): a supporter keeps the
+/// highest band they ever reached, at the thresholds that were in force when
+/// they reached it, so raising a step later never takes a band away.
+///
+/// `previous` is `bands-earned.json` -> `earned`, keyed by the case-folded card
+/// name. `cards` is the wall as `buildWall` built it, whose `band` already is
+/// the higher of the stored one and today's. An entry whose card is missing
+/// this run is kept as it was: a run that could not reach Stripe drops every
+/// Stripe donor for that run, and pruning here would delete their band.
+/// Returns a new object; neither input is mutated.
+export function updateEarned(previous = {}, cards = [], month = "") {
+  const out = { ...(previous ?? {}) };
+  for (const c of cards ?? []) {
+    const key = fold(c?.name);
+    if (!key || !BAND_RANK.has(c?.band)) continue;
+    const prior = out[key];
+    if (prior && higherBand(prior.band, c.band) === prior.band) continue;
+    out[key] = { band: c.band, since: month };
+  }
+  return Object.fromEntries(Object.entries(out).sort(([a], [b]) => a.localeCompare(b)));
 }
 
 /// Which trophies a card wears.
@@ -245,7 +297,11 @@ export function buildWall(records, options = {}) {
     prealpha = new Set(),
     eras = new Map(),
     cardStyles = {},
+    // R-OJJ.10: the thresholds in force, and the band each card already earned.
+    bands = BANDS,
+    earned = {},
   } = options;
+  const earnedBand = (name) => earned?.[fold(name)]?.band;
   const styles = new Map(
     Object.entries(cardStyles).map(([n, s]) => [fold(n), String(s ?? "")]),
   );
@@ -300,7 +356,10 @@ export function buildWall(records, options = {}) {
       level: levelFor(months.length),
       // Set once the wall is sorted, below.
       place: 0,
-      band: bandFor(p.usd),
+      // Never lower than the band already earned, whatever today's steps say.
+      band: earnedBand(p.name)
+        ? higherBand(earnedBand(p.name), bandFor(p.usd, bands))
+        : bandFor(p.usd, bands),
       badges: badgesFor({
         name: p.name,
         rails,
