@@ -93,6 +93,21 @@ test("the donation code matches the app's derivation, bit for bit", async () => 
   );
 });
 
+test("the donation code matches vectors from license.rs supporter_code_from", async () => {
+  // Printed by a copy of the Rust function, compiled 2026-10-13.
+  const vectors = [
+    ["", "PV-4OYMIQ"],
+    ["{}", "PV-IQJW7I"],
+    ['{"licensee":"x"}', "PV-2NYN6T"],
+    ["ÿþ license", "PV-HPFDNN"],
+  ];
+  for (const [text, code] of vectors) assert.equal(await donationCode(text), code);
+  assert.equal(
+    await codeHash("PV-4OYMIQ"),
+    "054bb0aa08cbff864af599ab627da951887f6bee22402e92b6dbc1c98f6099d6",
+  );
+});
+
 test("a signed license verifies and a tampered one does not", async () => {
   const text = await licenseText();
   assert.equal(await licenseSigned(JSON.parse(text), KEYS), true);
