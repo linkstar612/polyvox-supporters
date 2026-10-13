@@ -149,6 +149,20 @@ payment.
    Sessions the minter creates already carry the optional `displayname` field
    and the app's `client_reference_id`, so `aggregate.mjs` counts them like any
    Payment Link payment.
+8. **Make Stripe payments land in minutes** (live since 2026-10-12): Workbench
+   → Webhooks → *Add destination*, payload style **Thin**, events
+   `v1.checkout.session.completed`, `v1.checkout.session.async_payment_succeeded`
+   and `v1.invoice.paid`, type *Webhook endpoint*, URL
+   `https://polyvox-kofi-doorman.terry61295.workers.dev/stripe`. Then, from
+   `worker/`, `npx wrangler secret put STRIPE_WEBHOOK_SECRET` with the
+   destination's `whsec_…`. Thin payloads carry no donor details; the doorman
+   checks the signature and dispatches `stripe-payment`, and the Action polls
+   Stripe as usual. *Ping* on the destination page should show `200 OK`. Without
+   it the cron still catches every payment, just hours later.
+9. **3D Secure** (on since 2026-10-12): Radar → Rules → *Request 3DS if 3D
+   Secure is supported for card* is enabled, which covers every Payment Link;
+   `worker/donate` asks for it on custom amounts itself
+   (`request_three_d_secure=any`). A card with no 3D Secure still pays.
 
 Until the Stripe secret exists the Action still runs — it just skips the Stripe
 rail and applies the ledger and overrides. Nothing breaks.

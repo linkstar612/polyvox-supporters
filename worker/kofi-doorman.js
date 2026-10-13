@@ -136,10 +136,13 @@ export default {
 // apart, so a paid tip used to wait that long for the wall. Stripe's webhook
 // rings here instead and the aggregator runs within a minute or two.
 //
-// Nothing from the event is forwarded. The aggregator re-reads Stripe with its
-// own read-only key, so the dispatch carries only its type. The event body
-// holds the donor's email and name; it is read here to check Stripe's
-// signature and its `type`, and goes no further.
+// The Stripe destination is registered with THIN payloads, whose type reads
+// `v1.checkout.session.completed` and whose body is an event type and an
+// object id: nothing about the donor reaches this Worker. A snapshot payload
+// (same type without the `v1.`) is accepted too; it does carry the donor's
+// email, and is read only for the signature and the type. Either way the
+// dispatch carries nothing, because the aggregator re-reads Stripe with its
+// own read-only key.
 
 const STRIPE_EVENTS = new Set([
   "checkout.session.completed",
@@ -167,7 +170,7 @@ async function stripeDoorbell(request, env) {
 
   let type;
   try {
-    type = JSON.parse(body).type;
+    type = String(JSON.parse(body).type ?? "").replace(/^v1\./, "");
   } catch {
     return new Response("bad payload", { status: 400 });
   }

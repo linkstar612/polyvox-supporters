@@ -113,8 +113,13 @@ test("a signed paid checkout rings the aggregator and forwards nothing", async (
   assert.deepEqual(sent[0].body, { event_type: "stripe-payment" });
 });
 
-test("renewals and delayed payments ring too", async () => {
-  for (const type of ["invoice.paid", "checkout.session.async_payment_succeeded"]) {
+test("renewals, delayed payments and thin v1. events ring too", async () => {
+  for (const type of [
+    "invoice.paid",
+    "checkout.session.async_payment_succeeded",
+    "v1.checkout.session.completed",
+    "v1.invoice.paid",
+  ]) {
     const { sent } = await ring({ type });
     assert.equal(sent.length, 1, type);
   }
@@ -134,6 +139,10 @@ test("an unsigned, forged or stale request rings nothing", async () => {
 });
 
 test("other event types are acknowledged and ignored", async () => {
+  for (const type of ["v1.checkout.session.expired", "v2.core.event_destination.ping"]) {
+    const thin = await ring({ type });
+    assert.equal(thin.sent.length, 0, type);
+  }
   const { status, sent } = await ring({ type: "charge.refunded" });
   assert.equal(status, 200);
   assert.equal(sent.length, 0);
