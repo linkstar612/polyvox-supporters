@@ -132,6 +132,18 @@
       "recurring": false,
       "at": "2026-09-27T20:08:00+08:00",
       "note": "Personal Alipay collection code, bill line forwarded 2026-10-09. Memo was the existing wall name plus the app's donation code PV-C3WDTO, which unlocks this card's trophies in that install."
+    },
+    {
+      "id": "wechat:2026-10-16-1852-34.77",
+      "platform": "wechat",
+      "month": "2026-10",
+      "amount": 34.77,
+      "currency": "CNY",
+      "goal": "living",
+      "name": "星火light",
+      "link": "",
+      "recurring": false,
+      "at": "2026-10-16T18:52:00+08:00"
     }
   ]
 }
