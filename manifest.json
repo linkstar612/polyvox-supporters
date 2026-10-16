@@ -1,6 +1,6 @@
 {
   "schema": 1,
-  "updated_at": "2026-10-16T09:45:49.633Z",
+  "updated_at": "2026-10-16T11:04:23.045Z",
   "cn_alipay_url": "https://qr.alipay.com/fkx14384xioygstaelud788",
   "cn_wechat_url": "wxp://f2f0A9cBJGuK35Q_ORclkPEoLvRnarv0-O2anGVzEJLjtSwbjkkQTDjez35EAkqVZ_qV",
   "goals": [
@@ -8,7 +8,7 @@
       "id": "living",
       "kind": "monthly",
       "target_usd": 500,
-      "current_usd": 15,
+      "current_usd": 20.18,
       "fund_url": "https://buy.stripe.com/14A7sM9Sa3Shf1O2yr1Nu00",
       "fund_monthly_url": "https://buy.stripe.com/aFa14o7K260pcTGb4X1Nu0e"
     }
@@ -236,6 +236,26 @@
       }
     },
     {
+      "name": "星火light",
+      "tier": "supporter",
+      "since": "2026-10",
+      "link": "",
+      "permanent": false,
+      "platform": "wechat",
+      "rails": [
+        "wechat"
+      ],
+      "level": 1,
+      "place": 7,
+      "band": "bronze",
+      "badges": [
+        "first_light"
+      ],
+      "months": {
+        "2026-10": "supporter"
+      }
+    },
+    {
       "name": "Amber",
       "tier": "supporter",
       "since": "2026-07",
@@ -246,7 +266,7 @@
         "stripe"
       ],
       "level": 1,
-      "place": 7,
+      "place": 8,
       "band": "bronze",
       "badges": [
         "prealpha",
@@ -267,7 +287,7 @@
         "stripe"
       ],
       "level": 1,
-      "place": 8,
+      "place": 9,
       "band": "bronze",
       "badges": [
         "prealpha",
@@ -288,7 +308,7 @@
         "kofi"
       ],
       "level": 1,
-      "place": 9,
+      "place": 10,
       "band": "bronze",
       "badges": [
         "first_light"
@@ -308,7 +328,7 @@
         "kofi"
       ],
       "level": 1,
-      "place": 10,
+      "place": 11,
       "band": "bronze",
       "badges": [
         "first_light"
@@ -328,7 +348,7 @@
         "stripe"
       ],
       "level": 1,
-      "place": 11,
+      "place": 12,
       "band": "bronze",
       "badges": [
         "first_light"
@@ -348,7 +368,7 @@
         "stripe"
       ],
       "level": 1,
-      "place": 12,
+      "place": 13,
       "band": "bronze",
       "badges": [
         "first_light"
@@ -368,7 +388,7 @@
         "kofi"
       ],
       "level": 1,
-      "place": 13,
+      "place": 14,
       "band": "bronze",
       "badges": [
         "first_light",
