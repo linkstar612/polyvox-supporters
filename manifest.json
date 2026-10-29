@@ -1,6 +1,6 @@
 {
   "schema": 1,
-  "updated_at": "2026-10-29T00:24:21.938Z",
+  "updated_at": "2026-10-29T00:55:49.927Z",
   "cn_alipay_url": "https://qr.alipay.com/fkx14384xioygstaelud788",
   "cn_wechat_url": "wxp://f2f0A9cBJGuK35Q_ORclkPEoLvRnarv0-O2anGVzEJLjtSwbjkkQTDjez35EAkqVZ_qV",
   "goals": [
@@ -8,7 +8,7 @@
       "id": "living",
       "kind": "monthly",
       "target_usd": 500,
-      "current_usd": 20.18,
+      "current_usd": 23.25,
       "fund_url": "https://buy.stripe.com/14A7sM9Sa3Shf1O2yr1Nu00",
       "fund_monthly_url": "https://buy.stripe.com/aFa14o7K260pcTGb4X1Nu0e"
     }
