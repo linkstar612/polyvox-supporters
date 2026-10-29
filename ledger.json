@@ -144,6 +144,45 @@
       "link": "",
       "recurring": false,
       "at": "2026-10-16T18:52:00+08:00"
+    },
+    {
+      "id": "booth:87697621",
+      "platform": "booth",
+      "month": "2026-09",
+      "at": "2026-09-14T22:06:44+09:00",
+      "amount": 1000,
+      "currency": "JPY",
+      "goal": "living",
+      "name": "",
+      "link": "",
+      "recurring": false,
+      "note": "BOOTH order 87697621, variation コーヒー代 1000 / Coffee, bought as a gift, card. BOOTH shows the seller no buyer name for a digital order, so anonymous until the buyer tells the owner (BOOTH Contact Customer on the order) and asks to be named. Gross; BOOTH took 101 JPY."
+    },
+    {
+      "id": "booth:87705006",
+      "platform": "booth",
+      "month": "2026-09",
+      "at": "2026-09-15T00:19:16+09:00",
+      "amount": 1000,
+      "currency": "JPY",
+      "goal": "living",
+      "name": "",
+      "link": "",
+      "recurring": false,
+      "note": "BOOTH order 87705006, variation コーヒー代 1000 / Coffee, card. BOOTH shows the seller no buyer name for a digital order, so anonymous until the buyer tells the owner (BOOTH Contact Customer on the order) and asks to be named. Gross; BOOTH took 101 JPY."
+    },
+    {
+      "id": "booth:89908332",
+      "platform": "booth",
+      "month": "2026-10",
+      "at": "2026-10-28T06:55:21+09:00",
+      "amount": 500,
+      "currency": "JPY",
+      "goal": "living",
+      "name": "",
+      "link": "",
+      "recurring": false,
+      "note": "BOOTH order 89908332, variation サポート 500 / Support, PayPal. BOOTH shows the seller no buyer name for a digital order, so anonymous until the buyer tells the owner (BOOTH Contact Customer on the order) and asks to be named. Gross; BOOTH took 73 JPY."
     }
   ]
 }
