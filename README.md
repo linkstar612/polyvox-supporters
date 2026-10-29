@@ -247,6 +247,17 @@ without naming anyone. `at` is the payment time from the receipt, with its zone
 Leave it off and the entry still counts, but its month can then only be won on
 the 1st ([First of the month](#first-of-the-month)).
 
+### BOOTH orders
+
+BOOTH never shows the shop a digital buyer's name, so its orders are recorded
+anonymous from the order mail itself: `node booth-record.mjs --mbox <inbox mbox>`
+turns each paid "Someone placed an order on your shop" mail into `booth:<order
+number>` through `ledger-append.mjs` (`--dry-run` to preview, a `.eml` path
+works too). It needs the receiving server's DKIM pass for booth.pm. On the
+owner's PC the "Polyvox BOOTH orders" task runs it every 30 minutes against
+Thunderbird's copy of the inbox and pushes what it adds. A buyer who asks to be
+named gets `name` set by hand, as below.
+
 ### …including a Stripe payment that predates the poller
 
 If you record a **Stripe** payment by hand — one that arrived before
